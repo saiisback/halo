@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: halo-postgres
+    environment:
+      POSTGRES_USER: halo
+      POSTGRES_PASSWORD: halo
+      POSTGRES_DB: halo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U halo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: halo-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://halo:halo@postgres:5432/halo
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENAI_MODEL=${OPENAI_MODEL:-openai/gpt-5}
+      - OPENAI_ENDPOINT=${OPENAI_ENDPOINT:-https://models.github.ai/inference}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      - STELLAR_NETWORK=testnet
+      - STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
+      - STELLAR_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
+      - DOCKER_TIMEOUT_SECONDS=300
+      # Build directory paths for Docker-in-Docker volume mounting
+      - BUILD_DIR=/app/builds
+      - HOST_BUILD_DIR=${PWD}/backend/builds
+    volumes:
+      - ./backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Explicitly mount builds directory for Docker-in-Docker access
+      - ./backend/builds:/app/builds
+    depends_on:
+      postgres:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:

@@ -1,0 +1,801 @@
+:33:23 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error: exit status exit status: 101
+2026-02-05 23:33:23 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Build failed with exit code 1
+2026-02-05 23:33:23 halo-backend   | ERROR:app.agents.orchestrator:[ORCHESTRATOR] Compilation error: Compilation failed
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Compile check: error present, retry count = 0
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Will retry compilation (attempt 1/2)
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] STEP 3: GENERATING SMART CONTRACT
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Retry mode - fixing error: Compilation failed...
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Starting contract generation
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:  - Type: fund_transfer
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:  - Name: FundTransferApp
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:  - Has previous code: True
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:  - Has error context: True
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Documentation context: 5 chunks, 13364 chars
+2026-02-05 23:34:01 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Attempting to fix previous error: Compilation failed...
+2026-02-05 23:34:09 halo-backend   | INFO:httpx:HTTP Request: POST https://models.github.ai/inference/chat/completions "HTTP/1.1 200 OK"
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Successfully fixed contract code
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Generated code length: 4247 chars
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Contract code generated: 4247 chars
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Code preview:
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  #![no_std]
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  use soroban_sdk::{contract, contractimpl, contracttype, Env, Map, String, Symbol, Vec};
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  #[contracttype]
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  pub enum DataKey {
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:      Accounts,
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:      Transactions,
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:      TransactionFee,
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:      MaxTransferLimit,
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  }
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  #[contracttype]
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:  pub struct Transaction {
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:      transaction_id: String,
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:      sender: String,
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] STEP 4: COMPILING CONTRACT
+2026-02-05 23:34:09 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Compilation result: FAILED
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Contract files prepared
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Using custom builder image: halo-soroban-builder:latest
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Starting compilation container...
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Container started, compiling...
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Files in /workspace:
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] total 8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 4 root root  128 Feb  5 18:04 .
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 1 root root 4096 Feb  5 18:04 ..
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] -rw-r--r-- 1 root root  451 Feb  5 18:04 Cargo.toml
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 3 root root   96 Feb  5 18:04 src
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] total 8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 3 root root   96 Feb  5 18:04 .
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 4 root root  128 Feb  5 18:04 ..
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] -rw-r--r-- 1 root root 4247 Feb  5 18:04 lib.rs
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] /usr/local/bin/soroban
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Building contract...
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] cargo rustc --manifest-path=Cargo.toml --crate-type=cdylib --target=wasm32-unknown-unknown --release
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Updating crates.io index
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Locking 161 packages to latest compatible versions
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding arbitrary v1.3.2 (available: v1.4.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding crypto-common v0.1.6 (available: v0.1.7)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding derive_arbitrary v1.3.2 (available: v1.4.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-builtin-sdk-macros v21.2.1 (available: v21.2.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-common v21.2.1 (available: v21.2.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-guest v21.2.1 (available: v21.2.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-host v21.2.1 (available: v21.2.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-macros v21.2.1 (available: v21.2.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-sdk v21.7.7 (available: v25.0.2)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding time v0.3.47 (requires Rust 1.88.0)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding time-core v0.1.8 (requires Rust 1.88.0)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding time-macros v0.2.27 (requires Rust 1.88.0)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloading crates ...
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base16ct v0.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded adler2 v2.0.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded block-buffer v0.10.4
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hex v0.4.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-derive v0.4.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-conv v0.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ident_case v1.0.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hex-literal v0.4.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rfc6979 v0.4.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ref-cast-impl v1.0.25
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rustc_version v0.4.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded sha2 v0.10.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_with_macros v3.16.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded time-core v0.1.8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded crypto-common v0.1.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base32 v0.4.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rand_core v0.6.4
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ff v0.13.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen-shared v0.2.108
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded signature v2.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded semver v1.0.27
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmi_arena v0.4.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ecdsa v0.16.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded powerfmt v0.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen-macro v0.2.108
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ppv-lite86 v0.2.21
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded group v0.13.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded either v1.15.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded generic-array v0.14.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-ledger-snapshot v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ed25519 v2.2.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded version_check v0.9.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-builtin-sdk-macros v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-macros v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded primeorder v0.13.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded pkcs8 v0.10.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded paste v1.0.15
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded addr2line v0.25.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded sec1 v0.7.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hmac v0.12.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded deranged v0.5.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-integer v0.1.46
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded once_cell v1.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rustc-demangle v0.1.27
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-guest v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling v0.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-spec-rust v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rustversion v1.0.22
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded thiserror-impl v1.0.69
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded zmij v1.0.19
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded spki v0.7.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded iana-time-zone v0.1.65
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded getrandom v0.2.17
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded itoa v1.0.17
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded digest v0.10.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded dyn-clone v1.0.20
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base64ct v1.8.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded autocfg v1.5.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded arbitrary v1.3.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded crate-git-revision v0.0.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded cpufeatures v0.2.17
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded strsim v0.11.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-spec v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ref-cast v1.0.25
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded keccak v0.1.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded equivalent v1.0.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded bytes-lit v0.0.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_macro v0.20.11
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ctor v0.2.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded derive_arbitrary v1.3.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rand_chacha v0.3.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded indexmap-nostd v0.4.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded escape-bytes v0.1.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_macro v0.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded downcast-rs v1.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded fnv v1.0.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded cfg-if v1.0.4
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded zeroize v1.8.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded time-macros v0.2.27
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded const-oid v0.9.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmi_core v0.13.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded stellar-strkey v0.0.8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded thiserror v1.0.69
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded static_assertions v1.1.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded smallvec v1.15.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen v0.2.108
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-traits v0.2.19
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-common v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded proc-macro2 v1.0.106
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_core v1.0.228
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_derive v1.0.228
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling v0.20.11
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded schemars v0.9.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen-macro-support v0.2.108
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded typenum v1.19.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded bumpalo v3.19.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded memchr v2.7.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rand v0.8.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hashbrown v0.12.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-bigint v0.4.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-sdk v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded k256 v0.13.4
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded indexmap v2.13.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded crypto-bigint v0.5.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ed25519-dalek v2.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded der v0.7.10
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded libm v0.2.16
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded itertools v0.11.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hashbrown v0.16.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded unicode-ident v1.0.22
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmparser-nostd v0.100.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde v1.0.228
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded schemars v1.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-wasmi v0.31.1-soroban.20.0.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded chrono v0.4.43
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_json v1.0.149
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmparser v0.116.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded curve25519-dalek v4.1.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_with v3.16.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded object v0.37.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded gimli v0.32.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded time v0.3.47
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded js-sys v0.3.85
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded zerocopy v0.8.38
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded syn v2.0.114
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ethnum v1.5.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_core v0.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_core v0.20.11
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-host v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded stellar-xdr v21.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base64 v0.22.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded backtrace v0.3.76
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded prettyplease v0.2.37
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded p256 v0.13.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded miniz_oxide v0.8.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded indexmap v1.9.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded log v0.4.29
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded elliptic-curve v0.13.8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base64 v0.13.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded quote v1.0.44
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded spin v0.9.8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded subtle v2.6.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-sdk-macros v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded libc v0.2.180
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded sha3 v0.10.8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling proc-macro2 v1.0.106
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling unicode-ident v1.0.22
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling quote v1.0.44
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_core v1.0.228
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling zmij v1.0.19
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde v1.0.228
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_json v1.0.149
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling itoa v1.0.17
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling memchr v2.7.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling strsim v0.11.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling fnv v1.0.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling ident_case v1.0.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling autocfg v1.5.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling thiserror v1.0.69
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling version_check v0.9.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling base32 v0.4.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling semver v1.0.27
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling typenum v1.19.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling escape-bytes v0.1.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-traits v0.2.19
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling generic-array v0.14.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling libc v0.2.180
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling either v1.15.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling itertools v0.11.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling rustc_version v0.4.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling syn v2.0.114
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling equivalent v1.0.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling hashbrown v0.16.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling indexmap v2.13.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling prettyplease v0.2.37
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling base64 v0.13.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling block-buffer v0.10.4
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling crypto-common v0.1.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling wasmparser v0.116.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling digest v0.10.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling cfg-if v1.0.4
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling cpufeatures v0.2.17
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-integer v0.1.46
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling ethnum v1.5.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling sha2 v0.10.9
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling static_assertions v1.1.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-bigint v0.4.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-sdk v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_core v0.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_core v0.20.11
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_derive v1.0.228
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling thiserror-impl v1.0.69
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-derive v0.4.2
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling bytes-lit v0.0.5
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_macro v0.20.11
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_macro v0.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling v0.21.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling v0.20.11
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_with_macros v3.16.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling crate-git-revision v0.0.6
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling hex v0.4.3
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling stellar-strkey v0.0.8
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling stellar-xdr v21.2.0
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-env-common v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-sdk-macros v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_with v3.16.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-spec v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-spec-rust v21.7.7
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-env-macros v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-env-guest v21.2.1
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling halo-contract v0.1.0 (/workspace)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:40:34
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 40  |         if accounts.contains_key(&account_id) {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                     ------------ ^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                     |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                     arguments to this method are incorrect
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:328:12
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 328 |     pub fn contains_key(&self, k: K) -> bool {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^^^^^^^^^^
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 40  -         if accounts.contains_key(&account_id) {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 40  +         if accounts.contains_key(account_id) {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:58:43
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 58  |         let sender_balance = accounts.get(&sender_account_id).unwrap_or(0);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                       --- ^^^^^^^^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                       |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                       arguments to this method are incorrect
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:342:12
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 342 |     pub fn get(&self, k: K) -> Option<V> {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 58  -         let sender_balance = accounts.get(&sender_account_id).unwrap_or(0);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 58  +         let sender_balance = accounts.get(sender_account_id).unwrap_or(0);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:63:45
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 63  |         let receiver_balance = accounts.get(&receiver_account_id).unwrap_or(0);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                         --- ^^^^^^^^^^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                         |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                         arguments to this method are incorrect
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:342:12
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 342 |     pub fn get(&self, k: K) -> Option<V> {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 63  -         let receiver_balance = accounts.get(&receiver_account_id).unwrap_or(0);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 63  +         let receiver_balance = accounts.get(receiver_account_id).unwrap_or(0);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0599]: no method named `to_string` found for type `u64` in the current scope
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:70:79
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 70 |         let transaction_id = String::from_str(&env, &env.ledger().timestamp().to_string());
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                                                               ^^^^^^^^^
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: there is a method `to_i8` with a similar name
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 70 |         let transaction_id = String::from_str(&env, &env.ledger().timestamp().to_i8());
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                                                               ~~~~~
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0599]: no method named `push` found for struct `soroban_sdk::Vec` in the current scope
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:71:22
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 71 |         transactions.push(Transaction {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |         -------------^^^^ method not found in `Vec<Transaction>`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:91:22
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 91  |         accounts.get(&account_id).unwrap_or(0)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                  --- ^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                  |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                  arguments to this method are incorrect
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:342:12
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 342 |     pub fn get(&self, k: K) -> Option<V> {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 91  -         accounts.get(&account_id).unwrap_or(0)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 91  +         accounts.get(account_id).unwrap_or(0)
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0277]: the trait bound `Transaction: Clone` is not satisfied
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:98:32
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 98  |         for tx in transactions.iter() {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                ^^^^ the trait `Clone` is not implemented for `Transaction`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: required by a bound in `soroban_sdk::Vec::<T>::iter`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/vec.rs:916:55
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 914 |     pub fn iter(&self) -> UnwrappedIter<VecTryIter<T>, T, T::Error>
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ---- required by a bound in this associated function
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 915 |     where
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 916 |         T: IntoVal<Env, Val> + TryFromVal<Env, Val> + Clone,
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                                       ^^^^^ required by this bound in `Vec::<T>::iter`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider annotating `Transaction` with `#[derive(Clone)]`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 13  + #[derive(Clone)]
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 14  | pub struct Transaction {
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0599]: no method named `push` found for struct `soroban_sdk::Vec` in the current scope
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:100:24
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 100 |                 result.push(tx);
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                        ^^^^ method not found in `Vec<_>`
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Some errors have detailed explanations: E0277, E0308, E0599.
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] For more information about an error, try `rustc --explain E0277`.
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error: could not compile `halo-contract` (lib) due to 8 previous errors
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error: exit status exit status: 101
+2026-02-05 23:35:00 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Build failed with exit code 1
+2026-02-05 23:35:00 halo-backend   | ERROR:app.agents.orchestrator:[ORCHESTRATOR] Compilation error: Compilation failed
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Compile check: error present, retry count = 1
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Will retry compilation (attempt 2/2)
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] STEP 3: GENERATING SMART CONTRACT
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Retry mode - fixing error: Compilation failed...
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Starting contract generation
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:  - Type: fund_transfer
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:  - Name: FundTransferApp
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:  - Has previous code: True
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:  - Has error context: True
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Documentation context: 5 chunks, 13364 chars
+2026-02-05 23:35:37 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Attempting to fix previous error: Compilation failed...
+2026-02-05 23:35:44 halo-backend   | INFO:httpx:HTTP Request: POST https://models.github.ai/inference/chat/completions "HTTP/1.1 200 OK"
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Successfully fixed contract code
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.rust_agent:[RUST_AGENT] Generated code length: 4247 chars
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Contract code generated: 4247 chars
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Code preview:
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  #![no_std]
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  use soroban_sdk::{contract, contractimpl, contracttype, Env, Map, String, Symbol, Vec};
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  #[contracttype]
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  pub enum DataKey {
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:      Accounts,
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:      Transactions,
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:      TransactionFee,
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:      MaxTransferLimit,
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  }
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  #[contracttype]
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:  pub struct Transaction {
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:      transaction_id: String,
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:      sender: String,
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] STEP 4: COMPILING CONTRACT
+2026-02-05 23:35:44 halo-backend   | INFO:app.agents.orchestrator:============================================================
+2026-02-05 23:36:18 halo-postgres  | 2026-02-05 18:06:18.681 UTC [27] LOG:  checkpoint starting: time
+2026-02-05 23:36:18 halo-postgres  | 2026-02-05 18:06:18.717 UTC [27] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.011 s, sync=0.001 s, total=0.038 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Compilation result: FAILED
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Contract files prepared
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Using custom builder image: halo-soroban-builder:latest
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Starting compilation container...
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Container started, compiling...
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Files in /workspace:
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] total 8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 4 root root  128 Feb  5 18:05 .
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 1 root root 4096 Feb  5 18:05 ..
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] -rw-r--r-- 1 root root  451 Feb  5 18:05 Cargo.toml
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 3 root root   96 Feb  5 18:05 src
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] total 8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 3 root root   96 Feb  5 18:05 .
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] drwxr-xr-x 4 root root  128 Feb  5 18:05 ..
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] -rw-r--r-- 1 root root 4247 Feb  5 18:05 lib.rs
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] /usr/local/bin/soroban
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Building contract...
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] cargo rustc --manifest-path=Cargo.toml --crate-type=cdylib --target=wasm32-unknown-unknown --release
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Updating crates.io index
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Locking 161 packages to latest compatible versions
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding arbitrary v1.3.2 (available: v1.4.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding crypto-common v0.1.6 (available: v0.1.7)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding derive_arbitrary v1.3.2 (available: v1.4.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-builtin-sdk-macros v21.2.1 (available: v21.2.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-common v21.2.1 (available: v21.2.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-guest v21.2.1 (available: v21.2.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-host v21.2.1 (available: v21.2.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-env-macros v21.2.1 (available: v21.2.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding soroban-sdk v21.7.7 (available: v25.0.2)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding time v0.3.47 (requires Rust 1.88.0)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding time-core v0.1.8 (requires Rust 1.88.0)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Adding time-macros v0.2.27 (requires Rust 1.88.0)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloading crates ...
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base32 v0.4.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base64 v0.13.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded crypto-common v0.1.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-builtin-sdk-macros v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_macro v0.20.11
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded cfg-if v1.0.4
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded keccak v0.1.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded itoa v1.0.17
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded signature v2.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rand_chacha v0.3.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ref-cast v1.0.25
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded downcast-rs v1.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-conv v0.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ident_case v1.0.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ctor v0.2.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rustc_version v0.4.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ppv-lite86 v0.2.21
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded sec1 v0.7.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base64ct v1.8.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded subtle v2.6.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded time-core v0.1.8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-spec-rust v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-ledger-snapshot v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-macros v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rustc-demangle v0.1.27
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded primeorder v0.13.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded quote v1.0.44
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded autocfg v1.5.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded arbitrary v1.3.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded pkcs8 v0.10.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded powerfmt v0.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ecdsa v0.16.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ref-cast-impl v1.0.25
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded semver v1.0.27
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded paste v1.0.15
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rustversion v1.0.22
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded deranged v0.5.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling v0.20.11
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rand_core v0.6.4
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling v0.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded addr2line v0.25.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-integer v0.1.46
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded getrandom v0.2.17
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ed25519 v2.2.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded digest v0.10.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded group v0.13.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded generic-array v0.14.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ff v0.13.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded either v1.15.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rfc6979 v0.4.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-derive v0.4.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded indexmap-nostd v0.4.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hex-literal v0.4.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded fnv v1.0.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_macro v0.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded cpufeatures v0.2.17
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded escape-bytes v0.1.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded equivalent v1.0.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded dyn-clone v1.0.20
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hex v0.4.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded derive_arbitrary v1.3.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-spec v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded bytes-lit v0.0.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded adler2 v2.0.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded crate-git-revision v0.0.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded block-buffer v0.10.4
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hmac v0.12.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base16ct v0.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded once_cell v1.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded iana-time-zone v0.1.65
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_derive v1.0.228
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-guest v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-traits v0.2.19
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_core v1.0.228
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ethnum v1.5.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded js-sys v0.3.85
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded log v0.4.29
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen-shared v0.2.108
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmi_arena v0.4.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded strsim v0.11.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded version_check v0.9.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded time-macros v0.2.27
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen-macro v0.2.108
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded spki v0.7.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded stellar-strkey v0.0.8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded proc-macro2 v1.0.106
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded schemars v0.9.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde v1.0.228
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded rand v0.8.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded libm v0.2.16
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hashbrown v0.16.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded itertools v0.11.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded k256 v0.13.4
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded indexmap v2.13.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded zeroize v1.8.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded smallvec v1.15.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded sha2 v0.10.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_with_macros v3.16.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_with v3.16.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded zmij v1.0.19
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded spin v0.9.8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-common v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen v0.2.108
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded gimli v0.32.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasm-bindgen-macro-support v0.2.108
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded unicode-ident v1.0.22
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded typenum v1.19.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded curve25519-dalek v4.1.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded chrono v0.4.43
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-sdk v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded object v0.37.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmi_core v0.13.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmparser-nostd v0.100.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-wasmi v0.31.1-soroban.20.0.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded thiserror-impl v1.0.69
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded serde_json v1.0.149
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded wasmparser v0.116.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded thiserror v1.0.69
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded static_assertions v1.1.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-sdk-macros v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded hashbrown v0.12.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded time v0.3.47
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded ed25519-dalek v2.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded zerocopy v0.8.38
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded crypto-bigint v0.5.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded syn v2.0.114
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded schemars v1.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded num-bigint v0.4.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded memchr v2.7.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded soroban-env-host v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded stellar-xdr v21.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded libc v0.2.180
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded elliptic-curve v0.13.8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded der v0.7.10
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_core v0.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded darling_core v0.20.11
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded bumpalo v3.19.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded base64 v0.22.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded backtrace v0.3.76
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded prettyplease v0.2.37
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded p256 v0.13.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded miniz_oxide v0.8.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded indexmap v1.9.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded const-oid v0.9.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Downloaded sha3 v0.10.8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling proc-macro2 v1.0.106
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling unicode-ident v1.0.22
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling quote v1.0.44
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_core v1.0.228
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde v1.0.228
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling zmij v1.0.19
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_json v1.0.149
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling memchr v2.7.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling itoa v1.0.17
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling fnv v1.0.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling strsim v0.11.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling ident_case v1.0.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling autocfg v1.5.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling thiserror v1.0.69
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling version_check v0.9.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling base32 v0.4.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling typenum v1.19.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling semver v1.0.27
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling escape-bytes v0.1.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-traits v0.2.19
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling generic-array v0.14.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling either v1.15.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling libc v0.2.180
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling rustc_version v0.4.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling syn v2.0.114
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling itertools v0.11.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling hashbrown v0.16.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling equivalent v1.0.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling indexmap v2.13.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling prettyplease v0.2.37
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling block-buffer v0.10.4
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling crypto-common v0.1.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling cfg-if v1.0.4
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling digest v0.10.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling base64 v0.13.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling wasmparser v0.116.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-integer v0.1.46
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling cpufeatures v0.2.17
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling static_assertions v1.1.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling sha2 v0.10.9
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling ethnum v1.5.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-bigint v0.4.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-sdk v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_core v0.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_core v0.20.11
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_derive v1.0.228
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling thiserror-impl v1.0.69
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling num-derive v0.4.2
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling bytes-lit v0.0.5
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_macro v0.20.11
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling_macro v0.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling v0.20.11
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling darling v0.21.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_with_macros v3.16.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling crate-git-revision v0.0.6
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling hex v0.4.3
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling stellar-strkey v0.0.8
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling stellar-xdr v21.2.0
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-env-common v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-sdk-macros v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling serde_with v3.16.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-spec v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-spec-rust v21.7.7
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-env-macros v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling soroban-env-guest v21.2.1
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Compiling halo-contract v0.1.0 (/workspace)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:40:34
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 40  |         if accounts.contains_key(&account_id) {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                     ------------ ^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                     |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                     arguments to this method are incorrect
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:328:12
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 328 |     pub fn contains_key(&self, k: K) -> bool {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^^^^^^^^^^
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 40  -         if accounts.contains_key(&account_id) {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 40  +         if accounts.contains_key(account_id) {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:58:43
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 58  |         let sender_balance = accounts.get(&sender_account_id).unwrap_or(0);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                       --- ^^^^^^^^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                       |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                       arguments to this method are incorrect
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:342:12
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 342 |     pub fn get(&self, k: K) -> Option<V> {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 58  -         let sender_balance = accounts.get(&sender_account_id).unwrap_or(0);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 58  +         let sender_balance = accounts.get(sender_account_id).unwrap_or(0);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:63:45
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 63  |         let receiver_balance = accounts.get(&receiver_account_id).unwrap_or(0);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                         --- ^^^^^^^^^^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                         |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                         arguments to this method are incorrect
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:342:12
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 342 |     pub fn get(&self, k: K) -> Option<V> {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 63  -         let receiver_balance = accounts.get(&receiver_account_id).unwrap_or(0);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 63  +         let receiver_balance = accounts.get(receiver_account_id).unwrap_or(0);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0599]: no method named `to_string` found for type `u64` in the current scope
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:70:79
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 70 |         let transaction_id = String::from_str(&env, &env.ledger().timestamp().to_string());
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                                                               ^^^^^^^^^
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: there is a method `to_i8` with a similar name
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 70 |         let transaction_id = String::from_str(&env, &env.ledger().timestamp().to_i8());
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                                                               ~~~~~
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0599]: no method named `push` found for struct `soroban_sdk::Vec` in the current scope
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:71:22
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 71 |         transactions.push(Transaction {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |         -------------^^^^ method not found in `Vec<Transaction>`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0308]: mismatched types
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:91:22
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 91  |         accounts.get(&account_id).unwrap_or(0)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                  --- ^^^^^^^^^^^ expected `String`, found `&String`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                  |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                  arguments to this method are incorrect
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: method defined here
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/map.rs:342:12
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 342 |     pub fn get(&self, k: K) -> Option<V> {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ^^^
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider removing the borrow
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 91  -         accounts.get(&account_id).unwrap_or(0)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 91  +         accounts.get(account_id).unwrap_or(0)
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0277]: the trait bound `Transaction: Clone` is not satisfied
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:98:32
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 98  |         for tx in transactions.iter() {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                ^^^^ the trait `Clone` is not implemented for `Transaction`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] note: required by a bound in `soroban_sdk::Vec::<T>::iter`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> /usr/local/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/soroban-sdk-21.7.7/src/vec.rs:916:55
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 914 |     pub fn iter(&self) -> UnwrappedIter<VecTryIter<T>, T, T::Error>
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |            ---- required by a bound in this associated function
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 915 |     where
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 916 |         T: IntoVal<Env, Val> + TryFromVal<Env, Val> + Clone,
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                                                       ^^^^^ required by this bound in `Vec::<T>::iter`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] help: consider annotating `Transaction` with `#[derive(Clone)]`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 13  + #[derive(Clone)]
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 14  | pub struct Transaction {
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error[E0599]: no method named `push` found for struct `soroban_sdk::Vec` in the current scope
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] --> src/lib.rs:100:24
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] 100 |                 result.push(tx);
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] |                        ^^^^ method not found in `Vec<_>`
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Some errors have detailed explanations: E0277, E0308, E0599.
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] For more information about an error, try `rustc --explain E0277`.
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error: could not compile `halo-contract` (lib) due to 8 previous errors
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] error: exit status exit status: 101
+2026-02-05 23:36:35 halo-backend   | INFO:app.agents.orchestrator:  [COMPILER] Build failed with exit code 1
+2026-02-05 23:36:35 halo-backend   | ERROR:app.agents.orchestrator:[ORCHESTRATOR] Compilation error: Compilation failed
+2026-02-05 23:37:13 halo-backend   | INFO:app.agents.orchestrator:[ORCHESTRATOR] Compile check: error present, retry count = 2
+2026-02-05 23:37:13 halo-backend   | ERROR:app.agents.orchestrator:[ORCHESTRATOR] Max compile retries exceeded
