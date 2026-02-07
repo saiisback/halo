@@ -1237,10 +1237,6 @@ async def generate_rust_contract(
     if not reference_template:
         reference_template = WORKING_TOKEN_VAULT  # Default fallback
 
-    # #region agent log
-    _debug_log("D", "rust_agent.py:generate_rust_contract", "template selected", {"template_type": template_type, "description": description[:200], "template_has_prng": "prng()" in reference_template, "template_len": len(reference_template)})
-    # #endregion
-
     logger.info(f"[RUST_AGENT] Using reference template ({len(reference_template)} chars)")
 
     # Format specification (keep concise for context window)
@@ -1255,10 +1251,6 @@ async def generate_rust_contract(
         # Try aggressive auto-fix before asking LLM
         fixed_code = previous_code
         fixed_code, fixes = validate_and_fix_common_issues(fixed_code)
-
-        # #region agent log
-        _debug_log("B", "rust_agent.py:generate_rust_contract", "auto-fix result", {"fixes_applied": fixes, "still_has_random_bytes": "random_bytes" in fixed_code})
-        # #endregion
 
         if fixes:
             logger.info(f"[RUST_AGENT] Auto-fixes applied: {fixes}")
@@ -1291,10 +1283,6 @@ async def generate_rust_contract(
         if response:
             code = extract_rust_code(response)
             code = cleanup_rust_code(code)
-
-            # #region agent log
-            _debug_log("C", "rust_agent.py:generate_rust_contract", "LLM fix response", {"code_len": len(code), "has_random_bytes": "random_bytes" in code, "has_gen_range": "gen_range" in code, "has_prng": "prng()" in code, "code_first_500": code[:500]})
-            # #endregion
 
             # Pre-validate before returning
             is_valid, pre_errors = pre_validate_code(code)
