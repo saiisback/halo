@@ -951,69 +951,57 @@ SDK_CHEAT_SHEET = """## SOROBAN SDK 21.0.0 — MANDATORY RULES (violating ANY = 
 env.storage().instance().set(&DataKey::X, &value);   // & before key AND value
 env.storage().instance().get(&DataKey::X)             // & before key
 env.storage().instance().has(&DataKey::X)             // & before key
-env.storage().persistent().set(&DataKey::X, &value);  // same for persistent
 ```
 
 ### Rule 2: MAP takes OWNED values (NEVER use & with Map)
 ```rust
 map.get(key.clone())           // CORRECT - owned value
-map.contains_key(key.clone())  // CORRECT - owned value
 map.set(key.clone(), value)    // CORRECT - owned value
-// map.get(&key)               // WRONG! Compilation error!
 ```
 
 ### Rule 3: Vec uses push_back(), NEVER push()
-```rust
-vec.push_back(item);           // CORRECT
-// vec.push(item);             // WRONG! No method named push!
-```
 
-### Rule 4: ALL custom structs AND enums need both attributes
+### Rule 4: ALL custom structs AND enums need BOTH attributes
 ```rust
 #[contracttype]
 #[derive(Clone)]
 pub struct MyStruct { ... }
-
-#[contracttype]
-#[derive(Clone)]
-pub enum DataKey { ... }
 ```
 
 ### Rule 5: NO std library functions in no_std
-- NO `to_string()` — use u64 integers for IDs
-- NO `format!()` — use u64 integers for IDs
-- NO `println!()` — use env.events().publish() for logging
-- NO `String::from()` — use `String::from_str(&env, "text")`
-- NO `Symbol::from()` — use `Symbol::new(&env, "name")`
+- NO `to_string()`, `format!()`, `println!()`
+- NO `String::from()` → use `String::from_str(&env, "text")`
+- NO `Symbol::from()` → use `Symbol::new(&env, "name")`
 
 ### Rule 6: Start every file with `#![no_std]`
 
 ### Rule 7: require_auth() BEFORE any state changes
-```rust
-pub fn action(env: Env, caller: Address) {
-    caller.require_auth();  // MUST be first
-    // then do state changes
-}
-```
 
-### Rule 8: Token operations
+### Rule 8: Token ops use references
 ```rust
-use soroban_sdk::token;
 let client = token::Client::new(&env, &token_addr);
-client.transfer(&from, &to, &amount);  // all references
-client.balance(&address)               // reference
+client.transfer(&from, &to, &amount);
 ```
 
 ### Rule 9: Only import what you use
-```rust
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};
-// Add: token (if token ops), String (if strings), Vec (if vectors), Map (if maps)
-```
 
-### Rule 10: Events pattern
-```rust
-env.events().publish((Symbol::new(&env, "event_name"),), (data1, data2));
-```
+### Rule 10: Events: `env.events().publish((Symbol::new(&env, "name"),), (data));`
+
+### CRITICAL Rule 11: Address — FORBIDDEN METHODS (these DO NOT EXIST and cause compilation failure)
+- NO `Address::from_account_id()` — DOES NOT EXIST
+- NO `Address::from_bytes()` — DOES NOT EXIST
+- NO `Address::from_public_key()` — DOES NOT EXIST
+- NO `Address::zero()` / `Address::default()` — DOES NOT EXIST
+- NO `Address::new()` — DOES NOT EXIST
+- NO `Address::generate()` — DOES NOT EXIST (test-only)
+- ONLY valid: `Address::from_string(&String::from_str(&env, "G..."))` or receive as function parameter
+- In contracts, addresses should ALWAYS come from function parameters or storage, NEVER be constructed
+
+### Rule 12: KEEP CONTRACTS SIMPLE
+- Do NOT create "zero addresses" or default addresses
+- Do NOT use complex initialization patterns — use a simple initialize(env, admin) function
+- Store the admin Address directly from the parameter, never construct it
+- If a value is optional, use a bool flag in storage, not Option types
 """
 
 
@@ -1090,6 +1078,9 @@ RUST_FIX_ERROR_PROMPT = """Fix this Soroban contract compilation error. Output t
 - "unused import" → remove it from the use statement
 - "cannot find type" → check the use statement has the type imported
 - "mismatched types" → check you're passing & references to storage but owned values to Map
+- "no function or associated item named `from_account_id`" → Address::from_account_id DOES NOT EXIST. Get addresses from function params or storage. NEVER construct addresses.
+- "no function or associated item named `from_bytes`" on Address → DOES NOT EXIST. Use function params.
+- "no function or associated item named `from_public_key`" → DOES NOT EXIST. Use function params.
 
 ## SPECIFICATION:
 - Name: {name}
@@ -1549,6 +1540,40 @@ def validate_and_fix_common_issues(code: str) -> tuple[str, list[str]]:
     if 'use std::' in code:
         code = re.sub(r'use std::[^;]+;\n?', '', code)
         fixes_applied.append('Removed std:: imports')
+
+    # Fix 11: Address::from_account_id, from_bytes, from_public_key, zero, default, new, generate
+    # These are hallucinated APIs that don't exist in Soroban SDK 21
+    hallucinated_address_patterns = [
+        (r'Address::from_account_id\s*\([^)]*\)', 'Address hallucination: from_account_id'),
+        (r'Address::from_bytes\s*\([^)]*\)', 'Address hallucination: from_bytes'),
+        (r'Address::from_public_key\s*\([^)]*\)', 'Address hallucination: from_public_key'),
+        (r'Address::zero\s*\([^)]*\)', 'Address hallucination: zero'),
+        (r'Address::default\s*\([^)]*\)', 'Address hallucination: default'),
+        (r'Address::new\s*\([^)]*\)', 'Address hallucination: new'),
+        (r'Address::generate\s*\([^)]*\)', 'Address hallucination: generate'),
+    ]
+
+    for pattern, desc in hallucinated_address_patterns:
+        if re.search(pattern, code):
+            # Replace in assignments: let x = Address::from_account_id(...) → let x = env.current_contract_address()
+            code = re.sub(
+                rf'(let\s+\w+(?:\s*:\s*Address)?\s*=\s*){pattern}',
+                r'\1env.current_contract_address()',
+                code,
+            )
+            # Replace standalone uses
+            code = re.sub(pattern, 'env.current_contract_address()', code)
+            fixes_applied.append(f'Replaced {desc} with env.current_contract_address() (hallucinated API does not exist in SDK 21)')
+
+    # Fix 12: env.ledger().time() -> env.ledger().timestamp()
+    if '.ledger().time()' in code:
+        code = code.replace('.ledger().time()', '.ledger().timestamp()')
+        fixes_applied.append('Changed ledger().time() to ledger().timestamp()')
+
+    # Fix 13: Bytes::from() -> Bytes::from_slice()
+    if re.search(r'Bytes::from\s*\(', code):
+        code = re.sub(r'Bytes::from\s*\(&env\s*,', 'Bytes::from_slice(&env,', code)
+        fixes_applied.append('Changed Bytes::from() to Bytes::from_slice()')
 
     return code, fixes_applied
 
