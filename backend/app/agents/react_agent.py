@@ -39,10 +39,24 @@ RULES:
 - `export default function App()` with `import { useState } from 'react'`, `import { useContract } from './hooks/useContract'`, `import './index.css'`
 - Destructure: `const { invoke, query, loading, error, txStatus, getPublicKey, u64, i128, u32, sorobanSymbol } = useContract();`
 - invoke('method', {args}) for writes, query('method', {args}) for reads
-- CRITICAL: Use EXACT function names from CONTRACT FUNCTIONS below. Do NOT rename or invent method names. The method string must match the Rust fn name exactly.
+- CRITICAL — FUNCTION NAME MATCHING: The method name string passed to invoke() or query() MUST be the EXACT Rust fn name from CONTRACT FUNCTIONS below. Do NOT rename, alias, or invent method names. If the Rust function is called "flip", you MUST write invoke('flip', ...). NEVER write invoke('place_bet', ...) or any other name.
 - Every handler: `const pubKey = await getPublicKey(); if (!pubKey) return;`
 - Type wrapping: Address→pass pubKey string directly, u64 params→u64(number), i128 params→i128(amount), u32→u32(number), Symbol→sorobanSymbol('value'), String→pass string directly, bool→true/false
-- For enum-like u64 params (e.g., choice 0 or 1): use u64(0) or u64(1) with a dropdown mapping display labels to numeric values
+- CRITICAL — u64 PARAMS: u64 parameters MUST use the u64() wrapper with a NUMBER, never a raw string. For enum-like choices (e.g., heads=0, tails=1), use a <select> dropdown where the option values are numbers, then pass u64(Number(selectedValue)). NEVER pass a string like "heads" to a u64 param.
+
+EXAMPLES of correct calls:
+  invoke('flip', { player: pubKey, choice: u64(Number(choice)), bet_amount: i128(amount) })
+  query('get_balance', { addr: pubKey })
+  invoke('initialize', { admin: pubKey })
+WRONG — never do this:
+  invoke('place_bet', { choice: "heads" })  // wrong name AND wrong type
+
+- CRITICAL — RETURN VALUES: invoke() returns { success, hash, value } and query() returns { success, value }. To display results, use result.value (NOT result directly). If value could be an object/struct, use JSON.stringify(result.value). Example:
+  const result = await invoke('flip', { ... });
+  if (result) setMessage(`Won: ${result.value}`);  // CORRECT
+  // WRONG: setMessage(`Result: ${result}`)  ← shows [object Object]
+  For structs returned by query, access fields: result.value.field_name or display with JSON.stringify(result.value)
+
 - CSS classes: container, card, card-header, btn, btn-secondary, input, label, status success/error, text-muted, spinner
 - Dates: use `<input type="datetime-local">`, convert with `Math.floor(new Date(val).getTime()/1000)`
 - Keep simple: 2-4 cards, balanced braces, complete code from first import to final `}`"""
@@ -144,6 +158,155 @@ try {
         return True, None
 
 
+def _extract_rust_fn_names(rust_code: str) -> list[str]:
+    """Extract public function names from Rust contract code."""
+    if not rust_code:
+        return []
+    pattern = r'pub\s+fn\s+(\w+)\s*\('
+    return re.findall(pattern, rust_code)
+
+
+def _extract_rust_u64_params(rust_code: str) -> set[str]:
+    """Return set of (fn_name, param_name) pairs where param type is u64."""
+    results = set()
+    if not rust_code:
+        return results
+    fn_pattern = r'pub\s+fn\s+(\w+)\s*\((.*?)\)(?:\s*->\s*[\w:<>\s]+)?\s*\{'
+    for match in re.finditer(fn_pattern, rust_code, re.DOTALL):
+        fn_name = match.group(1)
+        params_str = match.group(2)
+        for param in params_str.split(','):
+            param = param.strip()
+            if ':' in param:
+                pname, ptype = param.split(':', 1)
+                if ptype.strip() == 'u64':
+                    results.add((fn_name, pname.strip()))
+    return results
+
+
+def validate_and_fix_contract_calls(app_code: str, rust_code: str) -> str:
+    """
+    Post-generation validation: fix mismatched invoke/query method names
+    and ensure u64 params use u64() wrapper instead of raw strings.
+    Returns corrected code.
+    """
+    if not rust_code:
+        return app_code
+
+    rust_fns = _extract_rust_fn_names(rust_code)
+    if not rust_fns:
+        return app_code
+
+    # Skip env-internal names
+    rust_fns = [fn for fn in rust_fns if fn != 'new' and not fn.startswith('__')]
+
+    # Find all invoke('xxx') and query('xxx') calls in the generated JSX
+    call_pattern = r"""(invoke|query)\s*\(\s*['"](\w+)['"]\s*"""
+    used_names = set()
+    for match in re.finditer(call_pattern, app_code):
+        used_names.add(match.group(2))
+
+    if not used_names:
+        return app_code
+
+    # Build replacement map: for each used name not in rust_fns, find the best match
+    replacements: dict[str, str] = {}
+    for used_name in used_names:
+        if used_name not in rust_fns:
+            best = _best_match(used_name, rust_fns)
+            if best:
+                replacements[used_name] = best
+                logger.warning(f"[REACT_AGENT] Fixing method name: '{used_name}' → '{best}'")
+
+    # Apply name replacements
+    for wrong, correct in replacements.items():
+        # Replace in invoke('wrong') and query('wrong') patterns
+        app_code = re.sub(
+            rf"""(invoke|query)\s*\(\s*['"]{re.escape(wrong)}['"]""",
+            rf"\1('{correct}'",
+            app_code,
+        )
+
+    # Fix u64 params passed as raw strings instead of u64() wrappers
+    u64_params = _extract_rust_u64_params(rust_code)
+    if u64_params:
+        # Find patterns like: paramName: "someString" or paramName: 'someString'
+        # inside invoke/query arg objects, and replace with u64(number)
+        for fn_name, param_name in u64_params:
+            # Match: param_name: "string" or param_name: 'string' in invoke/query calls
+            string_val_pattern = rf"""({re.escape(param_name)}\s*:\s*)(['"])([^'"]*)\2"""
+            def _fix_u64_string(m):
+                prefix = m.group(1)
+                val = m.group(3)
+                # Try to convert to number, fallback to 0
+                try:
+                    num = int(val)
+                except (ValueError, TypeError):
+                    # Map common string values to numbers
+                    val_lower = val.lower()
+                    if val_lower in ('heads', 'head', 'yes', 'true', 'a', 'option_a'):
+                        num = 0
+                    elif val_lower in ('tails', 'tail', 'no', 'false', 'b', 'option_b'):
+                        num = 1
+                    else:
+                        num = 0
+                logger.warning(f"[REACT_AGENT] Fixing u64 param: {param_name}: \"{val}\" → u64({num})")
+                return f"{prefix}u64({num})"
+
+            app_code = re.sub(string_val_pattern, _fix_u64_string, app_code)
+
+    # Fix [object Object] bug: replace ${result} with ${result.value} in template literals
+    # when result comes from invoke/query calls
+    # Match patterns like: `...${someVar}...` where someVar was assigned from invoke/query
+    invoke_query_vars = set()
+    assign_pattern = r'(?:const|let|var)\s+(\w+)\s*=\s*await\s+(?:invoke|query)\s*\('
+    for m in re.finditer(assign_pattern, app_code):
+        invoke_query_vars.add(m.group(1))
+
+    for var in invoke_query_vars:
+        # Fix: ${var} → ${var?.value} in template literals (but not ${var.something} which is already accessing a field)
+        # Only replace bare ${var} not ${var.field} or ${var?.field}
+        bare_pattern = rf'\$\{{{re.escape(var)}\}}'
+        if re.search(bare_pattern, app_code):
+            app_code = re.sub(bare_pattern, f'${{{var}?.value}}', app_code)
+            logger.warning(f"[REACT_AGENT] Fixing [object Object]: ${{{var}}} → ${{{var}?.value}}")
+
+        # Also fix: ${JSON.stringify(var)} → ${JSON.stringify(var?.value)}
+        json_pattern = rf'JSON\.stringify\(\s*{re.escape(var)}\s*\)'
+        if re.search(json_pattern, app_code):
+            app_code = re.sub(json_pattern, f'JSON.stringify({var}?.value)', app_code)
+            logger.warning(f"[REACT_AGENT] Fixing JSON.stringify: {var} → {var}?.value")
+
+    return app_code
+
+
+def _best_match(wrong_name: str, candidates: list[str]) -> str | None:
+    """Find the best matching function name from candidates using simple heuristics."""
+    wrong_lower = wrong_name.lower()
+    wrong_parts = set(re.split(r'[_\s]+', wrong_lower))
+
+    best = None
+    best_score = 0
+    for candidate in candidates:
+        cand_lower = candidate.lower()
+        cand_parts = set(re.split(r'[_\s]+', cand_lower))
+
+        # Exact substring match scores highest
+        if wrong_lower in cand_lower or cand_lower in wrong_lower:
+            score = 3
+        else:
+            # Score by overlapping word parts
+            overlap = wrong_parts & cand_parts
+            score = len(overlap)
+
+        if score > best_score:
+            best_score = score
+            best = candidate
+
+    # Only return if there's some meaningful overlap
+    return best if best_score > 0 else (candidates[0] if len(candidates) == 1 else None)
+
+
 async def generate_react_frontend(
     template_type: str,
     spec: dict,
@@ -165,7 +328,7 @@ async def generate_react_frontend(
 
     # Generate initial code
     logger.info(f"[REACT_AGENT] Generating App.jsx...")
-    
+
     app_code = await llm_generate_app(
         spec=spec,
         contract_id=contract_id,
@@ -179,12 +342,15 @@ async def generate_react_frontend(
 
     logger.info(f"[REACT_AGENT] Initial code generated ({len(app_code)} chars)")
 
+    # Post-generation validation: fix method names and u64 param types
+    app_code = validate_and_fix_contract_calls(app_code, rust_code)
+
     # Validation with retries
     for attempt in range(MAX_RETRIES + 1):
         logger.info(f"[REACT_AGENT] Validation attempt {attempt + 1}/{MAX_RETRIES + 1}")
 
         structural_issues = check_structural_validity(app_code)
-        
+
         if structural_issues is None:
             logger.info(f"[REACT_AGENT] Code validated successfully")
             return build_file_structure(
@@ -199,7 +365,7 @@ async def generate_react_frontend(
         if attempt < MAX_RETRIES:
             logger.info(f"[REACT_AGENT] Attempting to fix code...")
             fixed_code = await fix_code(app_code, structural_issues)
-            
+
             if fixed_code:
                 app_code = fixed_code
                 logger.info(f"[REACT_AGENT] Code fixed ({len(app_code)} chars)")

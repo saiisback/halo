@@ -392,7 +392,8 @@ async def deploy_node(state: PipelineState) -> PipelineState:
         result = await deploy_contract(
             wasm_binary=state["wasm_binary"],
             network=state["network"],
-            user_wallet=state.get("user_wallet")
+            user_wallet=state.get("user_wallet"),
+            rust_code=state.get("rust_code", ""),
         )
 
         if result["success"]:

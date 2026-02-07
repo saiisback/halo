@@ -1116,6 +1116,29 @@ env.prng().gen_len::<Bytes>(32)          // random Bytes of length 32
 - For coin flips: use `env.prng().gen_range::<u64>(0..2)` (returns 0 or 1)
 - For dice rolls: use `env.prng().gen_range::<u64>(1..=6)`
 - For picking random index: use `env.prng().gen_range::<u64>(0..count as u64)`
+
+### Rule 14: NO TOKEN TRANSFERS IN SIMPLE GAME CONTRACTS — RE-ENTRY PROTECTION
+- Soroban FORBIDS contract re-entry. If your contract calls `token::Client::transfer()` during execution, the token contract may call back into your contract, causing "Contract re-entry is not allowed" error.
+- For games (coin flip, dice, RPS, betting): do NOT use `token::Client` or `token::transfer`. Instead, track amounts as `u64` or `i128` in storage. The contract records bets/wins/losses as state — no actual token movement.
+- CORRECT pattern for coin flip / dice / betting:
+```rust
+pub fn flip(env: Env, player: Address, choice: u64, amount: u64) -> bool {
+    player.require_auth();
+    let result = env.prng().gen_range::<u64>(0..2);
+    let won = result == choice;
+    // Store bet record in storage — NO token transfer
+    // ...
+    won
+}
+```
+- WRONG — causes re-entry crash:
+```rust
+pub fn place_bet(env: Env, player: Address, amount: i128) {
+    let client = token::Client::new(&env, &token_addr);
+    client.transfer(&player, &env.current_contract_address(), &amount); // CRASHES: re-entry
+}
+```
+- Only use `token::Client::transfer` in dedicated deposit/withdraw DApps (vault, escrow, crowdfunding) where the reference template shows it working.
 """
 
 
@@ -1200,6 +1223,7 @@ RUST_FIX_ERROR_PROMPT = """Fix this Soroban contract compilation error. Output t
 - "no method named `next`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` instead.
 - "no method named `u64`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` for random u64, or `env.prng().gen_range::<u64>(0..2)` for coin flip.
 - "no method named `u32`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` instead.
+- "Contract re-entry is not allowed" → Your contract calls token::Client::transfer inside a game function (flip/bet/play). REMOVE all token::Client usage. Track amounts as u64/i128 in storage instead. No actual token movement in game contracts.
 
 ## SPECIFICATION:
 - Name: {name}
@@ -1512,6 +1536,12 @@ def pre_validate_code(code: str) -> tuple[bool, list[str]]:
     for method in hallucinated_prng_methods:
         if f'prng().{method}' in code or f'prng(). {method}' in code:
             errors.append(f"ERROR: prng().{method} DOES NOT EXIST. Use gen::<u64>(), gen_range::<u64>(min..max), or u64_in_range(min..max)")
+
+    # Check 10: Game contracts using token transfers (causes re-entry)
+    uses_prng = 'env.prng()' in code or 'prng().gen' in code
+    uses_token_transfer = 'token::Client' in code or 'client.transfer' in code
+    if uses_prng and uses_token_transfer:
+        errors.append("WARNING: Contract uses PRNG (game logic) AND token::Client::transfer — this will likely cause 'Contract re-entry is not allowed' error. Game contracts should track amounts in storage, not do token transfers.")
 
     return len(errors) == 0, errors
 

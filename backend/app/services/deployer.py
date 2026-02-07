@@ -55,19 +55,21 @@ async def deploy_contract(
     wasm_binary: bytes,
     network: str = "testnet",
     user_wallet: Optional[str] = None,
+    rust_code: Optional[str] = None,
 ) -> DeploymentResult:
     """
     Deploy a compiled WASM contract to Stellar.
-    
+
     Args:
         wasm_binary: Compiled WASM bytes
         network: Network to deploy to (testnet, futurenet)
         user_wallet: Optional user's public key for ownership
-    
+        rust_code: Optional Rust source code to check for initialize()
+
     Returns:
         DeploymentResult with contract ID or error
     """
-    
+
     if network not in NETWORKS:
         return DeploymentResult(
             success=False,
@@ -75,13 +77,13 @@ async def deploy_contract(
             wasm_hash=None,
             error=f"Unknown network: {network}"
         )
-    
+
     network_config = NETWORKS[network]
-    
+
     try:
         # Get or create hot wallet
         hot_wallet = await get_hot_wallet(network)
-        
+
         if not hot_wallet:
             return DeploymentResult(
                 success=False,
@@ -89,7 +91,7 @@ async def deploy_contract(
                 wasm_hash=None,
                 error="Failed to initialize hot wallet"
             )
-        
+
         # Deploy using Soroban RPC
         result = await _deploy_to_soroban(
             wasm_binary=wasm_binary,
@@ -97,9 +99,23 @@ async def deploy_contract(
             network_config=network_config,
             user_wallet=user_wallet,
         )
-        
+
+        # Auto-initialize if contract has an initialize function
+        if result["success"] and result["contract_id"] and rust_code:
+            if _has_initialize_fn(rust_code):
+                print(f"[DEPLOYER] Contract has initialize() — calling it with admin={hot_wallet.public_key}")
+                init_ok = await _auto_initialize(
+                    contract_id=result["contract_id"],
+                    hot_wallet=hot_wallet,
+                    network_config=network_config,
+                )
+                if init_ok:
+                    print("[DEPLOYER] Auto-initialize succeeded")
+                else:
+                    print("[DEPLOYER] Auto-initialize failed (non-fatal, contract still deployed)")
+
         return result
-        
+
     except Exception as e:
         return DeploymentResult(
             success=False,
@@ -437,9 +453,9 @@ async def check_stellar_connection(network: str = "testnet") -> bool:
 
 async def get_account_info(public_key: str, network: str = "testnet") -> dict | None:
     """Get account information from Stellar"""
-    
+
     network_config = NETWORKS.get(network, NETWORKS["testnet"])
-    
+
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -451,3 +467,62 @@ async def get_account_info(public_key: str, network: str = "testnet") -> dict | 
             return None
     except Exception:
         return None
+
+
+def _has_initialize_fn(rust_code: str) -> bool:
+    """Check if the Rust contract source defines a pub fn initialize(...)"""
+    import re
+    return bool(re.search(r'pub\s+fn\s+initialize\s*\(', rust_code))
+
+
+async def _auto_initialize(
+    contract_id: str,
+    hot_wallet: Keypair,
+    network_config: dict,
+) -> bool:
+    """
+    Call initialize(admin) on a freshly deployed contract so it's ready to use.
+    Returns True on success, False on failure (non-fatal).
+    """
+    from stellar_sdk import scval, Address
+
+    try:
+        soroban_server = SorobanServer(network_config["soroban_rpc_url"])
+        account = soroban_server.load_account(hot_wallet.public_key)
+
+        admin_address = Address(hot_wallet.public_key)
+        tx = (
+            TransactionBuilder(
+                source_account=account,
+                network_passphrase=network_config["network_passphrase"],
+                base_fee=100000,
+            )
+            .append_invoke_contract_function_op(
+                contract_id=contract_id,
+                function_name="initialize",
+                parameters=[admin_address.to_xdr_sc_val()],
+            )
+            .set_timeout(300)
+            .build()
+        )
+
+        prepared = soroban_server.prepare_transaction(tx)
+        prepared.sign(hot_wallet)
+        response = soroban_server.send_transaction(prepared)
+        print(f"[DEPLOYER] Initialize TX submitted: {response.hash}, status: {response.status}")
+
+        # Wait for confirmation
+        for i in range(30):
+            await asyncio.sleep(1)
+            tx_status = soroban_server.get_transaction(response.hash)
+            if tx_status.status == GetTransactionStatus.SUCCESS:
+                return True
+            elif tx_status.status == GetTransactionStatus.FAILED:
+                print(f"[DEPLOYER] Initialize TX failed")
+                return False
+
+        print("[DEPLOYER] Initialize TX timed out")
+        return False
+    except Exception as e:
+        print(f"[DEPLOYER] Auto-initialize error: {e}")
+        return False
