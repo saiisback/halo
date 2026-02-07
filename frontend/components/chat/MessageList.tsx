@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import { User, Bot, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
 import type { Message } from '@/lib/store'
 import { useHaloStore } from '@/lib/store'
 import { ThinkingChain } from './ThinkingChain'
@@ -24,21 +25,21 @@ export function MessageList({ messages }: MessageListProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center px-4 text-center">
-        <Bot className="mb-4 h-12 w-12 text-neutral-600" />
-        <h2 className="mb-2 text-lg font-medium text-neutral-300">
+      <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+        <div className="rounded-2xl border border-nb-gold/20 p-5 mb-5 bg-nb-gold/5 glow-gold">
+          <Image src="/logo.svg" alt="Halo" width={40} height={40} className="opacity-90" />
+        </div>
+        <h2 className="mb-2 font-serif text-2xl italic text-nb-gold">
           Welcome to Halo Studio
         </h2>
-        <p className="text-sm text-neutral-500">
-          Describe the DApp you want to build and I'll create it for you on Stellar.
+        <p className="text-sm text-[var(--muted)] max-w-[260px] leading-relaxed">
+          Describe the DApp you want to build and I&apos;ll create it for you on Stellar.
         </p>
-        <div className="mt-6 space-y-2 text-left text-sm">
-          <p className="text-neutral-500">Try something like:</p>
-          <ul className="space-y-1 text-neutral-400">
-            <li>• Create a fund transfer app</li>
-            <li>• Build a crowdfunding campaign</li>
-            <li>• Make an NFT minting page</li>
-          </ul>
+        <div className="mt-8 space-y-2.5 text-left text-sm w-full max-w-[280px]">
+          <p className="text-[var(--muted)] text-xs font-medium uppercase tracking-wider mb-3">Try something like:</p>
+          <SuggestionItem color="gold">Create a fund transfer app</SuggestionItem>
+          <SuggestionItem color="gold">Build a crowdfunding campaign</SuggestionItem>
+          <SuggestionItem color="gold">Make an NFT minting page</SuggestionItem>
         </div>
       </div>
     )
@@ -60,6 +61,15 @@ export function MessageList({ messages }: MessageListProps) {
   )
 }
 
+function SuggestionItem({ children, color }: { children: React.ReactNode; color: string }) {
+  return (
+    <div className="group rounded-xl border border-nb-gold/15 bg-[var(--surface)] px-4 py-2.5 text-[var(--foreground)] text-sm cursor-pointer transition-all hover:border-nb-gold/30 hover:bg-nb-gold/5 animate-fade-in-up">
+      <span className="text-nb-gold/60 mr-2 group-hover:text-nb-gold transition-colors">&#9679;</span>
+      {children}
+    </div>
+  )
+}
+
 function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user'
   const isSystem = message.role === 'system'
@@ -67,25 +77,25 @@ function MessageBubble({ message }: { message: Message }) {
   return (
     <div
       className={cn(
-        'flex gap-3',
+        'flex gap-3 animate-fade-in-up',
         isUser && 'flex-row-reverse'
       )}
     >
       {/* Avatar */}
       <div
         className={cn(
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-          isUser && 'bg-blue-600 text-white',
-          !isUser && !isSystem && 'bg-neutral-700 text-neutral-300',
-          isSystem && 'bg-red-900/50 text-red-400'
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
+          isUser && 'bg-[var(--surface-2)] text-[var(--foreground)]',
+          !isUser && !isSystem && 'bg-nb-gold/10 text-nb-gold',
+          isSystem && 'bg-nb-red/10 text-nb-red'
         )}
       >
         {isUser ? (
-          <User className="h-4 w-4" />
+          <User className="h-3.5 w-3.5" />
         ) : isSystem ? (
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-3.5 w-3.5" />
         ) : (
-          <Bot className="h-4 w-4" />
+          <Bot className="h-3.5 w-3.5" />
         )}
       </div>
 
@@ -98,15 +108,15 @@ function MessageBubble({ message }: { message: Message }) {
       >
         <div
           className={cn(
-            'rounded-xl px-3 py-2 text-sm',
-            isUser && 'bg-blue-600 text-white',
-            !isUser && !isSystem && 'bg-neutral-800 text-neutral-200',
-            isSystem && 'bg-red-900/30 text-red-400'
+            'rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+            isUser && 'bg-nb-gold text-black rounded-br-md',
+            !isUser && !isSystem && 'bg-[var(--surface-2)] text-[var(--foreground)] rounded-bl-md',
+            isSystem && 'bg-nb-red/10 text-nb-red border border-nb-red/20 rounded-bl-md'
           )}
         >
           {message.content}
         </div>
-        <span className="mt-1 text-xs text-neutral-500">
+        <span className="mt-1.5 text-[10px] text-[var(--muted)]">
           {formatTime(message.timestamp)}
         </span>
       </div>

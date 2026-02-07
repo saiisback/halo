@@ -210,10 +210,14 @@ export function useContract(contractId = CONTRACT_ID) {
 
       // Sign via Freighter (or bridge to real Freighter)
       setTxStatus('signing');
-      const signedXdr = await window.freighter.signTransaction(
+      const signResult = await window.freighter.signTransaction(
         prepared.toXDR(),
         { networkPassphrase: PASSPHRASE }
       );
+      // Freighter v2 returns { signedTxXdr, signerAddress }; v1/bridge returns plain string
+      const signedXdr = typeof signResult === 'object' && signResult !== null && signResult.signedTxXdr
+        ? signResult.signedTxXdr
+        : signResult;
 
       // Submit to network
       setTxStatus('submitting');

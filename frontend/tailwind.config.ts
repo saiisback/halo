@@ -10,7 +10,6 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Dark theme colors inspired by Vercel/Linear
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -44,10 +43,18 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        // Stellar brand colors
+        // Accent colors
+        'nb-gold': '#fdda24',
+        'nb-gold-dim': '#c9ae1d',
+        'nb-navy': '#3e63dd',
+        'nb-lilac': '#6e56cf',
+        'nb-teal': '#05a2c2',
+        'nb-green': '#30a46c',
+        'nb-amber': '#ffb224',
+        'nb-red': '#e5484d',
         stellar: {
-          blue: '#3E8BFF',
-          purple: '#7B61FF',
+          gold: '#fdda24',
+          navy: '#3e63dd',
         },
       },
       borderRadius: {
@@ -56,8 +63,9 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'monospace'],
+        sans: ['Space Grotesk', 'var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
+        serif: ['Instrument Serif', 'Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
     },
   },

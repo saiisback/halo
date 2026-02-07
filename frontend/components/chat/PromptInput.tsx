@@ -41,7 +41,7 @@ export function PromptInput({
   }
 
   return (
-    <div className="relative">
+    <div className="flex items-end gap-2">
       <textarea
         ref={textareaRef}
         value={value}
@@ -51,26 +51,27 @@ export function PromptInput({
         disabled={disabled}
         rows={1}
         className={cn(
-          'w-full resize-none rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 pr-12',
-          'text-sm text-white placeholder:text-neutral-500',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-          'disabled:cursor-not-allowed disabled:opacity-50'
+          'flex-1 resize-none rounded-2xl border border-[var(--border-color)] bg-[var(--surface-2)] px-4 py-3',
+          'text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]',
+          'focus:outline-none focus:ring-1 focus:ring-nb-gold/30 focus:border-nb-gold/40',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          'transition-all'
         )}
       />
       <button
         onClick={handleSubmit}
         disabled={disabled || !value.trim()}
+        style={{ backgroundColor: '#fdda24', borderColor: '#fdda24', color: '#000000' }}
         className={cn(
-          'absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg',
-          'bg-blue-600 text-white',
-          'hover:bg-blue-500 disabled:pointer-events-none disabled:opacity-50',
-          'transition-colors'
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+          'hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed',
+          'transition-all btn-press'
         )}
       >
         {disabled ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
-          <Send className="h-4 w-4" />
+          <Send className="h-5 w-5" />
         )}
       </button>
     </div>

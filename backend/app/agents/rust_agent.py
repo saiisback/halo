@@ -17,7 +17,6 @@ Enhanced with:
 
 import re
 import logging
-from pathlib import Path
 from typing import TypedDict
 
 from app.core.llm import generate_completion
@@ -719,6 +718,99 @@ impl Marketplace {
     }
 }'''
 
+WORKING_RPS = '''#![no_std]
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};
+
+#[contracttype]
+#[derive(Clone)]
+pub struct Game {
+    pub player1: Address,
+    pub player2: Address,
+    pub move1: u64,
+    pub move2: u64,
+    pub winner: u64,
+    pub active: bool,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub enum DataKey {
+    Game(u64),
+    NextId,
+    Admin,
+}
+
+#[contract]
+pub struct RockPaperScissors;
+
+#[contractimpl]
+impl RockPaperScissors {
+    pub fn initialize(env: Env, admin: Address) {
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::NextId, &1u64);
+    }
+
+    pub fn create_game(env: Env, creator: Address, opponent: Address) -> u64 {
+        creator.require_auth();
+        let id: u64 = env.storage().instance().get(&DataKey::NextId).unwrap_or(1);
+        let game = Game {
+            player1: creator.clone(),
+            player2: opponent,
+            move1: 0,
+            move2: 0,
+            winner: 0,
+            active: true,
+        };
+        env.storage().instance().set(&DataKey::Game(id), &game);
+        env.storage().instance().set(&DataKey::NextId, &(id + 1));
+        env.events().publish((Symbol::new(&env, "game_created"),), (id, creator));
+        id
+    }
+
+    pub fn play(env: Env, game_id: u64, player: Address, choice: u64) {
+        player.require_auth();
+        if choice < 1 || choice > 3 {
+            panic!("invalid: 1=rock 2=paper 3=scissors");
+        }
+        let mut game: Game = env.storage().instance().get(&DataKey::Game(game_id)).unwrap();
+        if !game.active {
+            panic!("game not active");
+        }
+        if player == game.player1 {
+            if game.move1 != 0 {
+                panic!("already played");
+            }
+            game.move1 = choice;
+        } else if player == game.player2 {
+            if game.move2 != 0 {
+                panic!("already played");
+            }
+            game.move2 = choice;
+        } else {
+            panic!("not a player");
+        }
+        if game.move1 != 0 && game.move2 != 0 {
+            let m1 = game.move1;
+            let m2 = game.move2;
+            if m1 == m2 {
+                game.winner = 3;
+            } else if (m1 == 1 && m2 == 3) || (m1 == 2 && m2 == 1) || (m1 == 3 && m2 == 2) {
+                game.winner = 1;
+            } else {
+                game.winner = 2;
+            }
+            game.active = false;
+            env.events().publish((Symbol::new(&env, "game_over"),), (game_id, game.winner));
+        }
+        env.storage().instance().set(&DataKey::Game(game_id), &game);
+    }
+
+    pub fn get_game(env: Env, game_id: u64) -> Game {
+        env.storage().instance().get(&DataKey::Game(game_id)).unwrap()
+    }
+}'''
+
 # Map template types to working examples — comprehensive keyword coverage
 WORKING_TEMPLATES = {
     # Token/Vault
@@ -781,8 +873,13 @@ WORKING_TEMPLATES = {
     "lottery": WORKING_LOTTERY,
     "raffle": WORKING_LOTTERY,
     "prize": WORKING_LOTTERY,
-    "game": WORKING_LOTTERY,
     "random": WORKING_LOTTERY,
+    # Game (Rock Paper Scissors)
+    "game": WORKING_RPS,
+    "rock_paper_scissors": WORKING_RPS,
+    "rps": WORKING_RPS,
+    "rock_paper": WORKING_RPS,
+    "scissors": WORKING_RPS,
     # Marketplace
     "marketplace": WORKING_MARKETPLACE,
     "shop": WORKING_MARKETPLACE,
@@ -790,27 +887,19 @@ WORKING_TEMPLATES = {
     "auction": WORKING_MARKETPLACE,
     "listing": WORKING_MARKETPLACE,
     "ecommerce": WORKING_MARKETPLACE,
+    # Custom / catch-all
+    "custom": WORKING_COUNTER,
 }
 
 
-def load_stellar_docs() -> str:
-    """Load the Stellar documentation from llms.txt"""
-    try:
-        llms_path = Path(__file__).parent.parent.parent / "llms.txt"
-        if llms_path.exists():
-            content = llms_path.read_text()
-            logger.info(f"[RUST_AGENT] Loaded Stellar docs from llms.txt ({len(content)} chars)")
-            return content
-        else:
-            logger.warning(f"[RUST_AGENT] llms.txt not found at {llms_path}")
-            return ""
-    except Exception as e:
-        logger.warning(f"[RUST_AGENT] Failed to load llms.txt: {e}")
+def format_docs_context(docs_context: list[str]) -> str:
+    """Format documentation context from Context7/RAG for prompt injection."""
+    if not docs_context:
         return ""
-
-
-# Load Stellar documentation once at module level
-STELLAR_DOCS = load_stellar_docs()
+    combined = "\n\n---\n\n".join(docs_context)
+    if len(combined) > 4000:
+        combined = combined[:4000]
+    return f"## DOCUMENTATION (from Context7 — use these patterns):\n{combined}"
 
 
 class RustGenerationResult(TypedDict):
@@ -949,7 +1038,7 @@ RUST_AGENT_USER_PROMPT = """Write a Soroban smart contract. You MUST follow the 
 {reference_template}
 ```
 
-{stellar_docs_chunk}
+{docs_context_section}
 
 ## CONTRACT SPECIFICATION:
 - Name: {name}
@@ -1006,63 +1095,6 @@ RUST_FIX_ERROR_PROMPT = """Fix this Soroban contract compilation error. Output t
 - Functions: {functions}
 
 Output the COMPLETE fixed lib.rs starting with #![no_std] (no markdown, no explanation):"""
-
-
-def get_stellar_docs_chunk(template_type: str, spec: dict) -> str:
-    """
-    Get a relevant chunk of Stellar docs to inject into the prompt.
-    Keeps it focused and under token limits.
-    """
-    if not STELLAR_DOCS:
-        return ""
-
-    # Extract the most relevant sections from llms.txt based on what the contract needs
-    sections = []
-
-    description = spec.get("description", "").lower()
-    functions = spec.get("functions", [])
-    func_names = [f.get("name", "") if isinstance(f, dict) else str(f) for f in functions]
-    func_text = " ".join(func_names).lower()
-
-    # Always include the critical gotchas section
-    gotchas_match = re.search(r'(## ⚠️ CRITICAL MISTAKES.*?)(?=## Contract Structure|## Core Imports|\Z)', STELLAR_DOCS, re.DOTALL)
-    if gotchas_match:
-        sections.append(gotchas_match.group(1).strip())
-
-    # Include storage section if the contract uses storage
-    if any(kw in description or kw in func_text for kw in ["storage", "store", "save", "get", "set", "balance", "count"]):
-        storage_match = re.search(r'(## Storage API.*?)(?=## Storage Keys|## Authentication|\Z)', STELLAR_DOCS, re.DOTALL)
-        if storage_match:
-            sections.append(storage_match.group(1).strip()[:800])
-
-    # Include token section if it involves tokens
-    if any(kw in description or kw in func_text for kw in ["token", "transfer", "deposit", "withdraw", "payment", "fund", "vault", "balance"]):
-        token_match = re.search(r'(## Token Operations.*?)(?=## Custom Errors|## Events|\Z)', STELLAR_DOCS, re.DOTALL)
-        if token_match:
-            sections.append(token_match.group(1).strip()[:800])
-
-    # Include Vec section if vectors might be used
-    if any(kw in description or kw in func_text for kw in ["list", "array", "players", "members", "items", "vec", "lottery", "raffle"]):
-        vec_match = re.search(r'(## Vec \(Vector\) Operations.*?)(?=## Map Operations|\Z)', STELLAR_DOCS, re.DOTALL)
-        if vec_match:
-            sections.append(vec_match.group(1).strip()[:600])
-
-    # Include Map section if maps might be used
-    if any(kw in description or kw in func_text for kw in ["map", "balance", "mapping", "lookup", "index"]):
-        map_match = re.search(r'(## Map Operations.*?)(?=## Complete Contract|\Z)', STELLAR_DOCS, re.DOTALL)
-        if map_match:
-            sections.append(map_match.group(1).strip()[:600])
-
-    if not sections:
-        return ""
-
-    combined = "\n\n".join(sections)
-    # Limit total doc context to avoid blowing out the prompt
-    if len(combined) > 3000:
-        combined = combined[:3000]
-
-    return f"""## STELLAR SDK DOCUMENTATION (use these patterns):
-{combined}"""
 
 
 async def generate_rust_contract(
@@ -1134,7 +1166,7 @@ async def generate_rust_contract(
             system_prompt=RUST_AGENT_SYSTEM_PROMPT,
             user_prompt=user_prompt,
             temperature=0.0,
-            max_tokens=8000,
+            max_tokens=16384,
         )
 
         if response:
@@ -1155,12 +1187,12 @@ async def generate_rust_contract(
     # Generate fresh code with working template as reference
     logger.info(f"[RUST_AGENT] Generating fresh contract code...")
 
-    # Get relevant documentation chunk
-    stellar_docs_chunk = get_stellar_docs_chunk(template_type, spec)
+    # Format documentation from Context7/RAG pipeline
+    docs_context_section = format_docs_context(docs_context)
 
     user_prompt = RUST_AGENT_USER_PROMPT.format(
         reference_template=reference_template,
-        stellar_docs_chunk=stellar_docs_chunk,
+        docs_context_section=docs_context_section,
         name=spec.get("name", "MyContract"),
         description=spec.get("description", "A Soroban smart contract")[:300],
         functions=functions_str,
@@ -1174,7 +1206,7 @@ async def generate_rust_contract(
         system_prompt=RUST_AGENT_SYSTEM_PROMPT,
         user_prompt=user_prompt,
         temperature=0.0,  # Deterministic — nail it on first try
-        max_tokens=8000,
+        max_tokens=16384,
     )
 
     if not response:

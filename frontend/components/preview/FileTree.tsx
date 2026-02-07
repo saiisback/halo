@@ -28,9 +28,9 @@ export function FileTree({ files }: FileTreeProps) {
   const tree = buildTree(files)
 
   return (
-    <div className="h-full overflow-y-auto p-2 bg-neutral-900">
+    <div className="h-full overflow-y-auto p-2 bg-[var(--background)]">
       <div className="mb-2 px-2">
-        <h3 className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
+        <h3 className="text-[10px] font-medium text-nb-gold uppercase tracking-wider">
           Project Files
         </h3>
       </div>
@@ -52,18 +52,18 @@ function TreeNodeComponent({ node, depth }: { node: TreeNode; depth: number }) {
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
-            'flex w-full items-center gap-1 rounded-lg px-2 py-1 text-sm',
-            'text-neutral-400 hover:bg-neutral-800 hover:text-white'
+            'flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-sm',
+            'text-[var(--foreground)] hover:bg-[var(--surface-2)] transition-colors'
           )}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
         >
           {isExpanded ? (
-            <ChevronDown className="h-4 w-4 shrink-0" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--muted)]" />
           ) : (
-            <ChevronRight className="h-4 w-4 shrink-0" />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--muted)]" />
           )}
-          <Folder className="h-4 w-4 shrink-0 text-yellow-500" />
-          <span className="truncate">{node.name}</span>
+          <Folder className="h-3.5 w-3.5 shrink-0 text-nb-amber" />
+          <span className="truncate text-xs">{node.name}</span>
         </button>
         {isExpanded && node.children && (
           <div>
@@ -81,20 +81,21 @@ function TreeNodeComponent({ node, depth }: { node: TreeNode; depth: number }) {
   }
 
   const FileIcon = getFileIcon(node.name)
+  const fileColor = getFileColor(node.name)
 
   return (
     <div
       className={cn(
-        'flex items-center gap-1 rounded-lg px-2 py-1 text-sm',
-        'text-neutral-400 hover:bg-neutral-800 hover:text-white',
-        'cursor-pointer'
+        'flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs',
+        'text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--foreground)]',
+        'cursor-pointer transition-colors'
       )}
       style={{ paddingLeft: `${depth * 12 + 24}px` }}
     >
-      <FileIcon className="h-4 w-4 shrink-0" />
+      <FileIcon className={cn('h-3.5 w-3.5 shrink-0', fileColor)} />
       <span className="truncate">{node.name}</span>
       {node.isGenerated && (
-        <Sparkles className="h-3 w-3 shrink-0 text-blue-500 ml-auto" />
+        <Sparkles className="h-3 w-3 shrink-0 text-nb-gold ml-auto" />
       )}
     </div>
   )
@@ -153,8 +154,27 @@ function getFileIcon(filename: string) {
   }
 }
 
+function getFileColor(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase()
+
+  switch (ext) {
+    case 'js':
+    case 'jsx':
+      return 'text-nb-gold'
+    case 'ts':
+    case 'tsx':
+      return 'text-nb-navy'
+    case 'json':
+      return 'text-nb-green'
+    case 'css':
+    case 'scss':
+      return 'text-nb-teal'
+    default:
+      return 'text-[var(--muted)]'
+  }
+}
+
 function isGeneratedFile(filename: string): boolean {
-  // Mark App.jsx and any custom components as AI-generated
   const generatedFiles = ['App.jsx', 'App.js', 'ContractForm.jsx']
   return generatedFiles.includes(filename)
 }

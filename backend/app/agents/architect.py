@@ -47,7 +47,8 @@ Your job is to analyze user requests and create a SIMPLE, FOCUSED specification 
 - Keep business logic simple — one clear responsibility per function
 
 ## IMPORTANT RULES for type/category naming:
-Use ONE of these exact categories: token_vault, crowdfunding, voting, nft, escrow, marketplace, subscription, lottery, counter, transfer
+Use ONE of these exact categories: token_vault, crowdfunding, voting, nft, escrow, marketplace, subscription, lottery, counter, transfer, game, custom
+- Use "custom" for any DApp that doesn't fit the other categories (e.g., prediction markets, social apps, registries, time-locks, etc.)
 This helps select the right reference template for code generation.
 
 ## EXAMPLE GOOD SPEC (for "Create a crowdfunding app"):
@@ -105,7 +106,7 @@ Create a SIMPLE contract spec. Remember:
 - All IDs must be u64 (no string IDs)
 - Every write function needs an Address param for require_auth()
 - First param is always env: Env (don't include in params list — it's implicit)
-- template_type MUST be one of: token_vault, crowdfunding, voting, nft, escrow, marketplace, subscription, lottery, counter, transfer
+- template_type MUST be one of: token_vault, crowdfunding, voting, nft, escrow, marketplace, subscription, lottery, counter, transfer, game, custom
 
 Respond with ONLY the JSON object:"""
 
@@ -122,7 +123,7 @@ async def analyze_prompt(prompt: str) -> AnalysisResult:
         system_prompt=ARCHITECT_SYSTEM_PROMPT,
         user_prompt=ARCHITECT_USER_PROMPT.format(prompt=prompt),
         temperature=0.1,
-        max_tokens=2048,
+        max_tokens=16384,
     )
     
     if not response:

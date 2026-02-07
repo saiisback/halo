@@ -189,7 +189,7 @@ function PreviewHeader({ contractId, walletAddress }: { contractId: string | nul
       {/* Right: Wallet & Contract */}
       <div className="flex items-center gap-3">
         {/* Wallet */}
-        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${
+        <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${
           isLive
             ? 'bg-green-500/10 border border-green-500/20'
             : 'bg-neutral-700/50 border border-neutral-600/30'
@@ -202,7 +202,7 @@ function PreviewHeader({ contractId, walletAddress }: { contractId: string | nul
         {contractId && contractId !== 'NOT_DEPLOYED' && (
           <button
             onClick={copyContractId}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors"
           >
             <span className="text-blue-400 font-mono">
               {contractId.slice(0, 8)}...{contractId.slice(-4)}

@@ -43,13 +43,15 @@ export function useWalletBridge(walletAddress: string | null) {
           case 'signTransaction': {
             const freighterApi = await import('@stellar/freighter-api')
             const signed = await freighterApi.signTransaction(args[0], args[1] || {})
-            result = signed
+            // Freighter v2 returns { signedTxXdr, signerAddress }; v1 returns plain string
+            result = typeof signed === 'string' ? signed : signed.signedTxXdr ?? signed
             break
           }
           case 'signAuthEntry': {
             const freighterApi = await import('@stellar/freighter-api')
             const signed = await freighterApi.signAuthEntry(args[0], args[1] || {})
-            result = signed
+            // Freighter v2 returns { signedAuthEntry, signerAddress }; v1 returns plain string
+            result = typeof signed === 'string' ? signed : signed.signedAuthEntry ?? signed
             break
           }
           default: {

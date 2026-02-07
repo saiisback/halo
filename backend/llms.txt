@@ -157,6 +157,7 @@ items.push_back(value);
 // CORRECT
 #[contracttype]
 #[derive(Clone)]  // REQUIRED!
+
 pub struct MyStruct { ... }
 ```
 

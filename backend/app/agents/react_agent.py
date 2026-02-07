@@ -7,6 +7,7 @@ This agent is responsible for:
 3. Retrying with corrections if validation fails
 """
 
+import re
 import subprocess
 import tempfile
 import logging
@@ -20,8 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-## Stellar Rust docs (llms.txt) intentionally NOT loaded here.
-## The React agent only needs to know the useContract hook API, not Soroban Rust internals.
+## Documentation is now fetched via Context7 and passed through the pipeline as docs_context.
 
 
 class ReactGenerationResult(TypedDict):
@@ -241,8 +241,17 @@ REACT_AGENT_USER_PROMPT = """Create App.jsx for this DApp. Follow the EXACT patt
 ## Description: {description}
 ## Contract ID: {contract_id}
 
-## Contract Functions (create UI for each):
+## CONTRACT FUNCTION SIGNATURES (AUTHORITATIVE — use ONLY these):
 {functions_detail}
+
+CRITICAL: The parameter count above is EXACT. Passing more or fewer params causes MismatchingParameterLen errors.
+- env: Env is implicit — NEVER pass it from the frontend
+- ONLY pass the parameters listed above — do NOT add extra parameters
+- Do NOT guess or infer additional parameters not listed above
+
+## Full contract source (for reference only — use signatures above for invoke/query calls):
+{rust_code}
+{docs_context_section}
 
 ## UI Requirements: {ui_requirements}
 
@@ -362,6 +371,7 @@ async def generate_react_frontend(
     template_type: str,
     spec: dict,
     contract_id: str,
+    rust_code: str,
     docs_context: list[str],
 ) -> ReactGenerationResult:
     """
@@ -382,6 +392,7 @@ async def generate_react_frontend(
     app_code = await llm_generate_app(
         spec=spec,
         contract_id=contract_id,
+        rust_code=rust_code,
         docs_context=docs_context,
     )
 
@@ -429,33 +440,112 @@ async def generate_react_frontend(
     )
 
 
+def extract_function_signatures(rust_code: str) -> str:
+    """
+    Parse public function signatures from Rust contract code.
+    Returns a formatted string showing each function with its frontend-facing
+    parameters (excluding env: Env) and type wrapping instructions.
+    """
+    if not rust_code:
+        return ""
+
+    pattern = r'pub\s+fn\s+(\w+)\s*\((.*?)\)(?:\s*->\s*([\w:<>\s]+))?\s*\{'
+    matches = re.findall(pattern, rust_code, re.DOTALL)
+
+    if not matches:
+        return ""
+
+    lines = []
+    for name, params_str, return_type in matches:
+        # Parse individual parameters
+        params = [p.strip() for p in params_str.split(',') if p.strip()]
+
+        # Remove env: Env (always first, implicit from frontend)
+        frontend_params = []
+        for p in params:
+            if p.strip().startswith('env') and 'Env' in p:
+                continue
+            frontend_params.append(p.strip())
+
+        ret = return_type.strip() if return_type else "void"
+
+        # Determine if this is a read or write function
+        is_query = name.startswith('get_') or name.startswith('is_') or name.startswith('has_')
+        method_type = "query" if is_query else "invoke"
+
+        # Format params with type wrapping hints
+        param_hints = []
+        for fp in frontend_params:
+            parts = fp.split(':')
+            if len(parts) == 2:
+                pname = parts[0].strip()
+                ptype = parts[1].strip()
+                if 'Address' in ptype:
+                    param_hints.append(f"{pname}: pass pubKey string directly")
+                elif ptype == 'u64':
+                    param_hints.append(f"{pname}: wrap with u64()")
+                elif ptype == 'i128':
+                    param_hints.append(f"{pname}: wrap with i128()")
+                elif ptype == 'bool':
+                    param_hints.append(f"{pname}: pass true/false")
+                elif ptype == 'String':
+                    param_hints.append(f"{pname}: pass string directly")
+                else:
+                    param_hints.append(f"{pname}: {ptype}")
+
+        param_count = len(param_hints)
+        param_detail = ", ".join(param_hints) if param_hints else "no params"
+        lines.append(f"- {method_type}('{name}', {{ {param_detail} }}) → {ret}  [{param_count} param(s)]")
+
+    return "\n".join(lines)
+
+
 async def llm_generate_app(
     spec: dict,
     contract_id: str,
+    rust_code: str,
     docs_context: list[str],
 ) -> str | None:
     """Use LLM to generate custom App.jsx"""
 
-    # Format functions with FULL detail so the LLM can generate correct UI
-    functions = spec.get("functions", [])
-    functions_detail_lines = []
-    for f in functions:
-        if isinstance(f, dict):
-            name = f.get("name", "unknown")
-            desc = f.get("description", "")
-            params = f.get("params", [])
-            returns = f.get("returns", "void")
-            param_str = ", ".join(params) if params else "none"
-            functions_detail_lines.append(f"- {name}({param_str}) → {returns}: {desc}")
-        else:
-            functions_detail_lines.append(f"- {f}")
-    functions_detail = "\n".join(functions_detail_lines) if functions_detail_lines else "Not specified"
+    # Extract REAL function signatures from the compiled contract code
+    # These are authoritative — they override the architect's spec
+    parsed_signatures = extract_function_signatures(rust_code)
+
+    if parsed_signatures:
+        functions_detail = f"EXACT SIGNATURES FROM DEPLOYED CONTRACT (use ONLY these — parameter count MUST match):\n{parsed_signatures}"
+        logger.info(f"[REACT_AGENT] Parsed function signatures from rust code:\n{parsed_signatures}")
+    else:
+        # Fallback to spec if rust code parsing fails
+        functions = spec.get("functions", [])
+        functions_detail_lines = []
+        for f in functions:
+            if isinstance(f, dict):
+                name = f.get("name", "unknown")
+                desc = f.get("description", "")
+                params = f.get("params", [])
+                returns = f.get("returns", "void")
+                param_str = ", ".join(params) if params else "none"
+                functions_detail_lines.append(f"- {name}({param_str}) → {returns}: {desc}")
+            else:
+                functions_detail_lines.append(f"- {f}")
+        functions_detail = "\n".join(functions_detail_lines) if functions_detail_lines else "Not specified"
+
+    # Format docs context from Context7
+    docs_context_section = ""
+    if docs_context:
+        docs_text = "\n\n".join(docs_context[:3])
+        if len(docs_text) > 2000:
+            docs_text = docs_text[:2000]
+        docs_context_section = f"\n## Stellar JS SDK Reference (from Context7):\n{docs_text}"
 
     user_prompt = REACT_AGENT_USER_PROMPT.format(
         contract_id=contract_id,
         name=spec.get("name", "MyDApp"),
         description=spec.get("description", "A Stellar DApp"),
         functions_detail=functions_detail,
+        rust_code=rust_code or "Not available",
+        docs_context_section=docs_context_section,
         ui_requirements=", ".join(spec.get("ui_requirements", [])) or "Standard DApp interface",
     )
 
@@ -465,7 +555,7 @@ async def llm_generate_app(
         system_prompt=REACT_AGENT_SYSTEM_PROMPT,
         user_prompt=user_prompt,
         temperature=0.0,  # Deterministic — nail it on first try
-        max_tokens=8192,
+        max_tokens=16384,
     )
 
     if not response:
@@ -485,7 +575,7 @@ async def fix_code(code: str, issue: str) -> str | None:
         system_prompt=FIX_CODE_SYSTEM_PROMPT,
         user_prompt=user_prompt,
         temperature=0,
-        max_tokens=8192,
+        max_tokens=16384,
     )
 
     if not response:

@@ -481,6 +481,7 @@ async def generate_react_node(state: PipelineState) -> PipelineState:
             template_type=state["template_type"],
             spec=state["contract_spec"],
             contract_id=state["contract_id"],
+            rust_code=state.get("rust_code", ""),
             docs_context=state["js_docs"]
         )
 

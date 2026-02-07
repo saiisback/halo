@@ -34,7 +34,11 @@ interface HaloStore {
   walletConnecting: boolean
   walletError: string | null
 
+  // Theme
+  theme: 'light' | 'dark'
+
   // Actions
+  toggleTheme: () => void
   sendPrompt: (prompt: string) => Promise<void>
   reset: () => void
   addMessage: (role: Message['role'], content: string) => void
@@ -63,7 +67,13 @@ export const useHaloStore = create<HaloStore>((set, get) => ({
   walletConnecting: false,
   walletError: null,
 
+  // Theme
+  theme: 'dark',
+
   // Actions
+  toggleTheme: () => {
+    set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' }))
+  },
   addMessage: (role, content) => {
     const message: Message = {
       id: crypto.randomUUID(),

@@ -14,7 +14,8 @@ class Settings(BaseSettings):
 
     # OpenAI GPT-5 via GitHub Models (Azure AI Inference)
     github_token: str = ""
-    openai_model: str = "gpt-4o"
+    openai_model: str = "openai/gpt-5"
+    openai_fallback_model: str = "openai/gpt-4.1"  # Used when primary model rejects large prompts (413)
     openai_endpoint: str = "https://models.github.ai/inference"
 
     # Embeddings (sentence-transformers, local)
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "postgresql://halo:halo@localhost:5432/halo"
+
+    # Context7 (optional - for enhanced documentation retrieval)
+    context7_api_key: str = "ctx7sk-ce854a92-243b-4c93-a703-7a5f776b2787"
 
     # Docker
     docker_timeout_seconds: int = 60

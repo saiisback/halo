@@ -5,10 +5,13 @@ Uses OpenAI GPT-5 via GitHub Models for high-quality code generation and analysi
 """
 
 import asyncio
+import logging
 from typing import Optional, AsyncGenerator
 from openai import OpenAI
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
@@ -34,8 +37,27 @@ class OpenAIClient:
                 base_url=self.endpoint,
                 api_key=self.api_key,
                 timeout=self.timeout,
+                max_retries=2,
             )
         return self._client
+
+    def _is_reasoning_model(self) -> bool:
+        """Check if the current model is a reasoning model (GPT-5, o-series).
+        These models have different parameter requirements."""
+        return any(tag in self.model for tag in ("gpt-5", "o1", "o3", "o4"))
+
+    def _model_params(self, max_tokens: int, temperature: float) -> dict:
+        """Return the correct API parameters for the current model.
+        
+        GPT-5 and o-series models:
+        - Require max_completion_tokens instead of max_tokens
+        - Only support temperature=1 (default), so we omit it
+        
+        Older models use max_tokens and support custom temperature.
+        """
+        if self._is_reasoning_model():
+            return {"max_completion_tokens": max_tokens}
+        return {"max_tokens": max_tokens, "temperature": temperature}
 
     async def close(self):
         """Close the client"""
@@ -87,13 +109,13 @@ class OpenAIClient:
 
             # Run sync client in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
+            params = self._model_params(max_tokens, temperature)
             response = await loop.run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
                     messages=messages,
                     model=self.model,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
+                    **params,
                 )
             )
             return response.choices[0].message.content
@@ -118,14 +140,14 @@ class OpenAIClient:
 
             # Run sync streaming in thread pool
             loop = asyncio.get_event_loop()
+            params = self._model_params(max_tokens, temperature)
             response = await loop.run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
                     messages=messages,
                     model=self.model,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
                     stream=True,
+                    **params,
                 )
             )
             
@@ -157,13 +179,13 @@ class OpenAIClient:
 
             # Run sync client in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
+            params = self._model_params(max_tokens, temperature)
             response = await loop.run_in_executor(
                 None,
                 lambda: client.chat.completions.create(
                     messages=messages,
                     model=self.model,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
+                    **params,
                 )
             )
             return response.choices[0].message.content
@@ -209,9 +231,8 @@ async def generate_completion(
             max_tokens=max_tokens,
         )
     except Exception as e:
-        print(f"OpenAI generation error: {e}")
-        # Return empty string on error - agents should handle fallback
-        return ""
+        logger.error(f"[LLM] generate_completion failed: {e}")
+        raise
 
 
 async def check_llm_health() -> bool:
@@ -220,9 +241,9 @@ async def check_llm_health() -> bool:
         client = get_openai_client()
         response = await client.chat(
             messages=[{"role": "user", "content": "hi"}],
-            max_tokens=10,
+            max_tokens=1024,  # Reasoning models need headroom for chain-of-thought
         )
-        return len(response) > 0
+        return response is not None and len(response) > 0
     except Exception:
         return False
 
