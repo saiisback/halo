@@ -55,11 +55,17 @@
       "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct PlayerStats {\n    pub wins: u64,\n    pub losses: u64,\n    pub total_bet: i128,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Stats(Address),\n    GameCount,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n        env.storage().instance().set",
       "compile_attempts": 1,
       "timestamp": "2026-02-07T23:00:46.635675+00:00"
+    },
+    "game_cdb884cb0245": {
+      "spec_summary": "A coin flip betting game where users bet on heads or tails and win double their bet if correct",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Bet {\n    pub player: Address,\n    pub amount: i128,\n    pub choice: bool,\n    pub result: bool,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Bet(u64),\n    NextBetId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        hou",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T23:32:38.797725+00:00"
     }
   },
   "generation_stats": {
-    "total_generations": 6,
-    "first_attempt_success": 6,
+    "total_generations": 7,
+    "first_attempt_success": 7,
     "required_retries": 8,
     "common_errors": [
       "error: `cargo metadata` exited with an error: error: manifest path `Cargo.toml` does not exist",
