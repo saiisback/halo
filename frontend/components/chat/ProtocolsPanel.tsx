@@ -1,8 +1,33 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Search, Plus, Check, CheckCheck, Sparkles, ExternalLink, Loader2 } from 'lucide-react'
+import {
+  Search, Plus, Check, CheckCheck, Sparkles, ExternalLink, Loader2,
+  BarChart3, ArrowLeftRight, Landmark, Flame, Waves,
+  Satellite, Banknote, Building2, Globe, Coins, ShieldCheck, Hexagon,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useHaloStore } from '@/lib/store'
+
+/** Map protocol IDs directly to Lucide icon components */
+const PROTOCOL_ICONS: Record<string, LucideIcon> = {
+  'stellar-dex': BarChart3,
+  'soroswap': ArrowLeftRight,
+  'blend-protocol': Landmark,
+  'phoenix-protocol': Flame,
+  'aquarius': Waves,
+  'mercury': Satellite,
+  'fxdao': Banknote,
+  'sep24-anchor': Building2,
+  'sep31-payments': Globe,
+  'soroban-token-sac': Coins,
+  'timelock-multisig': ShieldCheck,
+}
+
+function ProtocolIcon({ protocolId, className }: { protocolId: string; className?: string }) {
+  const Icon = PROTOCOL_ICONS[protocolId] ?? Hexagon
+  return <Icon className={className} />
+}
 
 const CATEGORY_ALL = 'All'
 
@@ -116,8 +141,8 @@ export function ProtocolsPanel() {
                 {suggestedProtocols.map(sp => (
                   <SuggestedCard
                     key={sp.id}
+                    protocolId={sp.id}
                     name={sp.name}
-                    icon={sp.icon}
                     reason={sp.reason}
                     category={sp.category}
                     isSelected={selectedProtocols.includes(sp.id)}
@@ -157,8 +182,8 @@ export function ProtocolsPanel() {
             {filteredProtocols.map(protocol => (
               <ProtocolCard
                 key={protocol.id}
+                protocolId={protocol.id}
                 name={protocol.name}
-                icon={protocol.icon}
                 description={protocol.description}
                 category={protocol.category}
                 docsUrl={protocol.docs_url}
@@ -180,8 +205,8 @@ export function ProtocolsPanel() {
 // ---------------------------------------------------------------------------
 
 function ProtocolCard({
+  protocolId,
   name,
-  icon,
   description,
   category,
   docsUrl,
@@ -190,8 +215,8 @@ function ProtocolCard({
   isBuilding,
   onToggle,
 }: {
+  protocolId: string
   name: string
-  icon: string
   description: string
   category: string
   docsUrl?: string | null
@@ -214,8 +239,13 @@ function ProtocolCard({
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-base shrink-0">{icon}</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 transition-colors
+            ${isSelected ? 'bg-[var(--nb-gold)]/15 text-[var(--nb-gold)]'
+              : isIntegrated ? 'bg-[var(--nb-green)]/15 text-[var(--nb-green)]'
+              : 'bg-[var(--surface-2)] text-[var(--muted)] group-hover:text-[var(--nb-gold)] group-hover:bg-[var(--nb-gold)]/10'}`}>
+            <ProtocolIcon protocolId={protocolId} className="w-4 h-4" />
+          </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <h3 className="text-xs font-semibold text-[var(--foreground)] truncate">{name}</h3>
@@ -276,8 +306,8 @@ function ProtocolCard({
 }
 
 function SuggestedCard({
+  protocolId,
   name,
-  icon,
   reason,
   category,
   isSelected,
@@ -285,8 +315,8 @@ function SuggestedCard({
   isBuilding,
   onToggle,
 }: {
+  protocolId: string
   name: string
-  icon: string
   reason: string
   category: string
   isSelected: boolean
@@ -307,8 +337,13 @@ function SuggestedCard({
       onClick={() => !isIntegrated && !isBuilding && onToggle()}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm">{icon}</span>
+        <div className="flex items-center gap-2.5">
+          <div className={`flex items-center justify-center w-7 h-7 rounded-md shrink-0
+            ${isSelected ? 'bg-[var(--nb-gold)]/15 text-[var(--nb-gold)]'
+              : isIntegrated ? 'bg-[var(--nb-green)]/15 text-[var(--nb-green)]'
+              : 'bg-[var(--nb-gold)]/10 text-[var(--nb-gold)]'}`}>
+            <ProtocolIcon protocolId={protocolId} className="w-3.5 h-3.5" />
+          </div>
           <div>
             <h4 className="text-xs font-semibold text-[var(--foreground)]">{name}</h4>
             <span className="text-[10px] text-[var(--muted)]">{category}</span>

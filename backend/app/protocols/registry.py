@@ -13,7 +13,7 @@ class Protocol(TypedDict):
     name: str
     description: str
     category: str  # DEX, Lending, DeFi, Data, Payments, Token, Security, Infrastructure
-    icon: str  # emoji icon
+    icon: str  # lucide-react icon name (e.g. "candlestick-chart")
     integration_prompt: str  # detailed AI prompt context for integration
     sdk_package: Optional[str]  # npm package name if applicable
     docs_url: Optional[str]  # documentation URL
@@ -25,7 +25,7 @@ PROTOCOLS: list[Protocol] = [
         "name": "Stellar DEX",
         "description": "Built-in decentralized exchange on Stellar with order book trading, path payments, and manage offers.",
         "category": "DEX",
-        "icon": "📊",
+        "icon": "candlestick-chart",
         "sdk_package": "@stellar/stellar-sdk",
         "docs_url": "https://developers.stellar.org/docs/encyclopedia/liquidity-on-stellar-sdex-liquidity-pools",
         "integration_prompt": """Integrate Stellar DEX (SDEX) functionality using the Stellar SDK.
@@ -70,7 +70,7 @@ UI components to add: Asset pair selector, order book display, swap form with sl
         "name": "Soroswap",
         "description": "Automated Market Maker (AMM) DEX built on Soroban with liquidity pools and token swaps.",
         "category": "DEX",
-        "icon": "🔄",
+        "icon": "arrow-left-right",
         "sdk_package": "soroswap-router-sdk",
         "docs_url": "https://docs.soroswap.finance",
         "integration_prompt": """Integrate Soroswap AMM DEX for token swaps and liquidity provision on Soroban.
@@ -107,7 +107,7 @@ UI components to add: Token swap form with amount inputs, price impact display, 
         "name": "Blend Protocol",
         "description": "Decentralized lending and borrowing protocol on Soroban with variable interest rates and collateral management.",
         "category": "Lending",
-        "icon": "🏦",
+        "icon": "landmark",
         "sdk_package": "@blend-capital/blend-sdk",
         "docs_url": "https://docs.blend.capital",
         "integration_prompt": """Integrate Blend Protocol for lending and borrowing on Soroban.
@@ -150,7 +150,7 @@ UI components to add: Supply/borrow forms, position overview dashboard, interest
         "name": "Phoenix Protocol",
         "description": "DeFi hub on Soroban offering AMM liquidity pools, staking, and multi-hop swaps.",
         "category": "DeFi",
-        "icon": "🔥",
+        "icon": "flame",
         "sdk_package": None,
         "docs_url": "https://docs.phoenix-hub.io",
         "integration_prompt": """Integrate Phoenix Protocol DeFi hub for AMM swaps, staking, and liquidity on Soroban.
@@ -189,7 +189,7 @@ UI components to add: Multi-hop swap interface, pool explorer, stake/unstake for
         "name": "Aquarius",
         "description": "Liquidity management protocol for Stellar with voting-based reward distribution and liquidity incentives.",
         "category": "Liquidity",
-        "icon": "🌊",
+        "icon": "waves",
         "sdk_package": None,
         "docs_url": "https://aqua.network/",
         "integration_prompt": """Integrate Aquarius liquidity management for reward voting and liquidity incentives.
@@ -221,7 +221,7 @@ UI components to add: Voting interface for market pairs, reward tracking dashboa
         "name": "Mercury",
         "description": "Soroban data indexer providing real-time event streaming, contract state queries, and historical data subscriptions.",
         "category": "Data",
-        "icon": "📡",
+        "icon": "satellite",
         "sdk_package": "@mercury-protocol/sdk",
         "docs_url": "https://docs.mercurydata.app",
         "integration_prompt": """Integrate Mercury indexer for real-time Soroban contract data and event streaming.
@@ -259,7 +259,7 @@ UI components to add: Real-time event feed, contract state viewer, historical ev
         "name": "FxDAO",
         "description": "Decentralized stablecoin protocol on Soroban for minting and managing collateral-backed stablecoins.",
         "category": "Stablecoin",
-        "icon": "💵",
+        "icon": "banknote",
         "sdk_package": None,
         "docs_url": "https://fxdao.io",
         "integration_prompt": """Integrate FxDAO stablecoin protocol for minting and managing stablecoins on Soroban.
@@ -299,7 +299,7 @@ UI components to add: Vault creation form, collateral ratio gauge, mint/repay in
         "name": "Stellar Anchors (SEP-24)",
         "description": "Fiat on/off ramp integration using SEP-24 interactive deposit and withdrawal with anchor services.",
         "category": "Infrastructure",
-        "icon": "🏧",
+        "icon": "building-2",
         "sdk_package": "@stellar/stellar-sdk",
         "docs_url": "https://developers.stellar.org/docs/anchoring-assets/enabling-deposit-and-withdrawal/",
         "integration_prompt": """Integrate SEP-24 anchor services for fiat on/off ramps (deposit and withdraw).
@@ -348,7 +348,7 @@ UI components to add: Deposit/withdraw buttons, anchor selection dropdown, fiat 
         "name": "Cross-Border Payments (SEP-31)",
         "description": "Send cross-border payments via Stellar anchors using the SEP-31 direct payment protocol.",
         "category": "Payments",
-        "icon": "🌍",
+        "icon": "globe",
         "sdk_package": "@stellar/stellar-sdk",
         "docs_url": "https://developers.stellar.org/docs/anchoring-assets/enabling-cross-border-payments/",
         "integration_prompt": """Integrate SEP-31 cross-border payment protocol for sending payments to recipients in different countries.
@@ -393,7 +393,7 @@ UI components to add: Payment form with recipient details, country/currency sele
         "name": "Soroban Token (SAC)",
         "description": "Stellar Asset Contract for wrapping classic Stellar assets into Soroban-compatible tokens with standard token interface.",
         "category": "Token",
-        "icon": "🪙",
+        "icon": "coins",
         "sdk_package": "@stellar/stellar-sdk",
         "docs_url": "https://soroban.stellar.org/docs/advanced-tutorials/stellar-asset-contract",
         "integration_prompt": """Integrate Stellar Asset Contract (SAC) for wrapping and interacting with classic Stellar assets in Soroban.
@@ -444,7 +444,7 @@ UI components to add: Token balance display, transfer form, approval management,
         "name": "Timelock & Multisig",
         "description": "Multi-signature authorization and time-locked transactions for secure Soroban contract governance.",
         "category": "Security",
-        "icon": "🔐",
+        "icon": "shield-check",
         "sdk_package": "@stellar/stellar-sdk",
         "docs_url": "https://soroban.stellar.org/docs/how-to-guides/auth",
         "integration_prompt": """Integrate timelock and multi-signature patterns for secure Soroban contract operations.

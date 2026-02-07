@@ -224,3 +224,47 @@
 .animate-gentle-pulse {
   animation: gentle-pulse 2s ease-in-out infinite;
 }
+
+/* ── Build Animation Styles ─────────────────────────────────────── */
+
+@keyframes code-glow {
+  0%, 100% {
+    text-shadow: 0 0 4px rgba(253, 218, 36, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 12px rgba(253, 218, 36, 0.4), 0 0 24px rgba(253, 218, 36, 0.1);
+  }
+}
+
+.animate-code-glow {
+  animation: code-glow 3s ease-in-out infinite;
+}
+
+@keyframes border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-border-flow {
+  background-size: 300% 300%;
+  animation: border-flow 4s ease infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Build animation backdrop */
+.build-animation-bg {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(110, 86, 207, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(62, 99, 221, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(253, 218, 36, 0.03) 0%, transparent 60%),
+    #08080c;
+}

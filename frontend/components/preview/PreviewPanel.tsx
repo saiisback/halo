@@ -5,6 +5,7 @@ import { useHaloStore } from '@/lib/store'
 import { SandpackPreview } from './SandpackPreview'
 import { FileTree } from './FileTree'
 import { BuildStatusExpanded } from './BuildStatus'
+import { BuildAnimation } from './BuildAnimation'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import {
@@ -145,7 +146,9 @@ export function PreviewPanel() {
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
           {activeTab === 'preview' && (
-            hasFiles ? (
+            isBuilding && !hasFiles ? (
+              <BuildAnimation />
+            ) : hasFiles ? (
               <SandpackPreview
                 files={generatedFiles}
                 contractId={contractId}
@@ -156,7 +159,9 @@ export function PreviewPanel() {
             )
           )}
           {activeTab === 'code' && (
-            hasFiles ? (
+            isBuilding && !hasFiles ? (
+              <BuildAnimation />
+            ) : hasFiles ? (
               <SandpackPreview
                 files={generatedFiles}
                 contractId={contractId}
@@ -168,12 +173,16 @@ export function PreviewPanel() {
             )
           )}
           {activeTab === 'console' && (
-            <SandpackPreview
-              files={generatedFiles}
-              contractId={contractId}
-              walletAddress={walletAddress}
-              showConsole
-            />
+            isBuilding && !hasFiles ? (
+              <BuildAnimation />
+            ) : (
+              <SandpackPreview
+                files={generatedFiles}
+                contractId={contractId}
+                walletAddress={walletAddress}
+                showConsole
+              />
+            )
           )}
           {activeTab === 'status' && <BuildStatusExpanded />}
         </div>
@@ -230,12 +239,7 @@ function EmptyState() {
         Describe your DApp in the chat and I&apos;ll generate a live preview here.
         Your app will be deployed to Stellar Testnet.
       </p>
-      <button
-        onClick={loadTestFiles}
-        className="rounded-2xl bg-nb-gold border border-nb-gold px-6 py-2.5 text-xs font-semibold text-black transition-all hover:bg-nb-amber hover:border-nb-amber btn-press glow-gold-sm"
-      >
-        Test Sandpack Preview
-      </button>
+      
     </div>
   )
 }

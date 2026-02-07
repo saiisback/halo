@@ -151,7 +151,7 @@ export const useHaloStore = create<HaloStore>((set, get) => ({
         if (p) {
           protocolNames.push(p.name)
           protocolContextParts.push(
-            `## ${p.icon} ${p.name}\n${p.description}\n\n${p.integration_prompt}`
+            `## ${p.name}\n${p.description}\n\n${p.integration_prompt}`
           )
         }
       }
