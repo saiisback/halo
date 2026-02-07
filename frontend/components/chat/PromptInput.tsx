@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { Send, Loader2 } from 'lucide-react'
+import { Send, Loader2, X } from 'lucide-react'
+import { useHaloStore } from '@/lib/store'
 
 interface PromptInputProps {
   onSubmit: (prompt: string) => void
@@ -17,6 +18,8 @@ export function PromptInput({
 }: PromptInputProps) {
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const selectedDetails = useHaloStore((s) => s.getSelectedProtocolDetails())
+  const removeSelectedProtocol = useHaloStore((s) => s.removeSelectedProtocol)
 
   // Auto-resize textarea
   useEffect(() => {
@@ -40,40 +43,69 @@ export function PromptInput({
     }
   }
 
+  const hasProtocols = selectedDetails.length > 0
+
   return (
-    <div className="flex items-end gap-2">
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        disabled={disabled}
-        rows={1}
-        className={cn(
-          'flex-1 resize-none rounded-2xl border border-[var(--border-color)] bg-[var(--surface-2)] px-4 py-3',
-          'text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]',
-          'focus:outline-none focus:ring-1 focus:ring-nb-gold/30 focus:border-nb-gold/40',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-          'transition-all'
-        )}
-      />
-      <button
-        onClick={handleSubmit}
-        disabled={disabled || !value.trim()}
-        style={{ backgroundColor: '#fdda24', borderColor: '#fdda24', color: '#000000' }}
-        className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-          'hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed',
-          'transition-all btn-press'
-        )}
-      >
-        {disabled ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          <Send className="h-5 w-5" />
-        )}
-      </button>
+    <div className="flex flex-col gap-2">
+      {/* Selected protocol chips */}
+      {hasProtocols && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedDetails.map((p) => (
+            <span
+              key={p.id}
+              className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full
+                         bg-[var(--nb-gold)]/10 border border-[var(--nb-gold)]/25
+                         text-[10px] font-medium text-[var(--nb-gold)] animate-fade-in-up"
+            >
+              <span>{p.icon}</span>
+              <span>{p.name}</span>
+              <button
+                onClick={() => removeSelectedProtocol(p.id)}
+                className="ml-0.5 p-0.5 rounded-full hover:bg-[var(--nb-gold)]/20 transition-colors"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Input row */}
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={hasProtocols ? 'Describe your DApp (protocols will be included)...' : placeholder}
+          disabled={disabled}
+          rows={1}
+          className={cn(
+            'flex-1 resize-none rounded-2xl border bg-[var(--surface-2)] px-4 py-3',
+            'text-sm text-[var(--foreground)] placeholder:text-[var(--muted)]',
+            'focus:outline-none focus:ring-1 focus:ring-nb-gold/30 focus:border-nb-gold/40',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            'transition-all',
+            hasProtocols ? 'border-[var(--nb-gold)]/30' : 'border-[var(--border-color)]'
+          )}
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={disabled || !value.trim()}
+          style={{ backgroundColor: '#fdda24', borderColor: '#fdda24', color: '#000000' }}
+          className={cn(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+            'hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed',
+            'transition-all btn-press'
+          )}
+        >
+          {disabled ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Send className="h-5 w-5" />
+          )}
+        </button>
+      </div>
     </div>
   )
 }

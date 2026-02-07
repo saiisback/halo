@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { generateDApp, type BuildEvent } from './api'
+import { generateDApp, type BuildEvent, type Protocol, type SuggestedProtocol, fetchProtocols, fetchSuggestedProtocols } from './api'
 
 export type BuildStep =
   | 'idle'
@@ -37,6 +37,17 @@ interface HaloStore {
   // Theme
   theme: 'light' | 'dark'
 
+  // Sidebar / Protocols state
+  sidebarTab: 'chat' | 'protocols'
+  protocols: Protocol[]
+  suggestedProtocols: SuggestedProtocol[]
+  selectedProtocols: string[]   // queued IDs (pending, not yet sent)
+  integratedProtocols: string[] // IDs already sent to the pipeline
+  protocolsLoading: boolean
+  suggestionsLoading: boolean
+  templateType: string | null
+  contractSpec: Record<string, unknown> | null
+
   // Actions
   toggleTheme: () => void
   sendPrompt: (prompt: string) => Promise<void>
@@ -50,6 +61,14 @@ interface HaloStore {
   loadTestFiles: () => void
   connectWallet: () => Promise<void>
   disconnectWallet: () => void
+
+  // Protocol actions
+  setSidebarTab: (tab: 'chat' | 'protocols') => void
+  loadProtocols: () => Promise<void>
+  loadSuggestedProtocols: () => Promise<void>
+  toggleProtocol: (protocol: Protocol | SuggestedProtocol) => void
+  removeSelectedProtocol: (id: string) => void
+  getSelectedProtocolDetails: () => { id: string; name: string; icon: string }[]
 }
 
 export const useHaloStore = create<HaloStore>((set, get) => ({
@@ -69,6 +88,17 @@ export const useHaloStore = create<HaloStore>((set, get) => ({
 
   // Theme
   theme: 'dark',
+
+  // Sidebar / Protocols
+  sidebarTab: 'chat',
+  protocols: [],
+  suggestedProtocols: [],
+  selectedProtocols: [],
+  integratedProtocols: [],
+  protocolsLoading: false,
+  suggestionsLoading: false,
+  templateType: null,
+  contractSpec: null,
 
   // Actions
   toggleTheme: () => {
@@ -109,22 +139,46 @@ export const useHaloStore = create<HaloStore>((set, get) => ({
   },
 
   sendPrompt: async (prompt) => {
-    const { addMessage, setBuildStatus, addBuildLog, setGeneratedFiles, setContractId, setError } = get()
+    const { addMessage, setBuildStatus, addBuildLog, setGeneratedFiles, setContractId, setError, protocols, selectedProtocols } = get()
 
-    // Reset state for new build
-    set({
+    // Build the enriched prompt with any selected protocols
+    let enrichedPrompt = prompt
+    const protocolNames: string[] = []
+    if (selectedProtocols.length > 0) {
+      const protocolContextParts: string[] = []
+      for (const pid of selectedProtocols) {
+        const p = protocols.find(pr => pr.id === pid)
+        if (p) {
+          protocolNames.push(p.name)
+          protocolContextParts.push(
+            `## ${p.icon} ${p.name}\n${p.description}\n\n${p.integration_prompt}`
+          )
+        }
+      }
+      if (protocolContextParts.length > 0) {
+        enrichedPrompt = `${prompt}\n\n--- Integrate the following Stellar protocols into this DApp ---\n\n${protocolContextParts.join('\n\n---\n\n')}`
+      }
+    }
+
+    // Move selected → integrated and clear selection
+    set((state) => ({
       isBuilding: true,
-      buildStatus: 'analyzing',
+      buildStatus: 'analyzing' as BuildStep,
       buildLogs: [],
       error: null,
-    })
+      integratedProtocols: Array.from(new Set([...state.integratedProtocols, ...state.selectedProtocols])),
+      selectedProtocols: [],
+    }))
 
-    // Add user message
-    addMessage('user', prompt)
+    // Add user message (show clean prompt + protocol tags)
+    const displayMsg = protocolNames.length > 0
+      ? `${prompt}\n\n[Protocols: ${protocolNames.join(', ')}]`
+      : prompt
+    addMessage('user', displayMsg)
 
     try {
       // Stream build events
-      for await (const event of generateDApp({ prompt, user_wallet: get().walletAddress || undefined })) {
+      for await (const event of generateDApp({ prompt: enrichedPrompt, user_wallet: get().walletAddress || undefined })) {
         handleBuildEvent(event, {
           setBuildStatus,
           addBuildLog,
@@ -132,6 +186,9 @@ export const useHaloStore = create<HaloStore>((set, get) => ({
           setContractId,
           setError,
           addMessage,
+        }, {
+          setTemplateType: (t: string) => set({ templateType: t }),
+          setContractSpec: (s: Record<string, unknown>) => set({ contractSpec: s }),
         })
       }
 
@@ -177,6 +234,67 @@ export const useHaloStore = create<HaloStore>((set, get) => ({
 
   disconnectWallet: () => {
     set({ walletAddress: null, walletError: null })
+  },
+
+  // Protocol actions
+  setSidebarTab: (tab) => {
+    set({ sidebarTab: tab })
+  },
+
+  loadProtocols: async () => {
+    if (get().protocols.length > 0) return // already loaded
+    set({ protocolsLoading: true })
+    try {
+      const protocols = await fetchProtocols()
+      set({ protocols, protocolsLoading: false })
+    } catch {
+      set({ protocolsLoading: false })
+    }
+  },
+
+  loadSuggestedProtocols: async () => {
+    const { templateType, contractSpec, integratedProtocols } = get()
+    if (!templateType || !contractSpec) return
+    set({ suggestionsLoading: true })
+    try {
+      const suggestions = await fetchSuggestedProtocols(
+        templateType,
+        contractSpec,
+        integratedProtocols,
+      )
+      set({ suggestedProtocols: suggestions, suggestionsLoading: false })
+    } catch {
+      set({ suggestionsLoading: false })
+    }
+  },
+
+  toggleProtocol: (protocol) => {
+    const { selectedProtocols, integratedProtocols } = get()
+    if (integratedProtocols.includes(protocol.id)) return // already sent
+
+    if (selectedProtocols.includes(protocol.id)) {
+      // Deselect
+      set({ selectedProtocols: selectedProtocols.filter(id => id !== protocol.id) })
+    } else {
+      // Select
+      set({ selectedProtocols: [...selectedProtocols, protocol.id] })
+    }
+  },
+
+  removeSelectedProtocol: (id) => {
+    set((state) => ({
+      selectedProtocols: state.selectedProtocols.filter(pid => pid !== id),
+    }))
+  },
+
+  getSelectedProtocolDetails: () => {
+    const { protocols, selectedProtocols } = get()
+    return selectedProtocols
+      .map(id => {
+        const p = protocols.find(pr => pr.id === id)
+        return p ? { id: p.id, name: p.name, icon: p.icon } : null
+      })
+      .filter((p): p is { id: string; name: string; icon: string } => p !== null)
   },
 
   loadTestFiles: () => {
@@ -231,6 +349,10 @@ function handleBuildEvent(
     setContractId: (id: string) => void
     setError: (error: string | null) => void
     addMessage: (role: Message['role'], content: string) => void
+  },
+  extras?: {
+    setTemplateType?: (t: string) => void
+    setContractSpec?: (s: Record<string, unknown>) => void
   }
 ) {
   const { setBuildStatus, addBuildLog, setGeneratedFiles, setContractId, setError, addMessage } = actions
@@ -239,6 +361,13 @@ function handleBuildEvent(
     case 'analyzing':
       setBuildStatus('analyzing')
       if (event.message) addBuildLog(event.message)
+      // Capture template_type and spec from analysis events for protocol suggestions
+      if (event.template_type) {
+        extras?.setTemplateType?.(event.template_type)
+      }
+      if (event.spec) {
+        extras?.setContractSpec?.(event.spec)
+      }
       break
 
     case 'retrieving_docs':

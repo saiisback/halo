@@ -142,7 +142,9 @@ async def analyze_node(state: PipelineState) -> PipelineState:
         
         state["events"].append({
             "step": "analyzing",
-            "message": f"Understood! Creating a {result['spec'].get('name', 'contract')} - {result['spec'].get('description', '')[:100]}"
+            "message": f"Understood! Creating a {result['spec'].get('name', 'contract')} - {result['spec'].get('description', '')[:100]}",
+            "template_type": result["template_type"],
+            "spec": result["spec"],
         })
     except Exception as e:
         logger.error(f"[ORCHESTRATOR] Analysis failed: {e}")

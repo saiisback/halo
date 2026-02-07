@@ -14,6 +14,9 @@ export interface BuildEvent {
   files?: Record<string, string>
   status?: string
   error?: string
+  // Analysis metadata (emitted during the "analyzing" step)
+  template_type?: string
+  spec?: Record<string, unknown>
 }
 
 /**
@@ -83,5 +86,87 @@ export async function checkHealth(): Promise<boolean> {
     return response.ok
   } catch {
     return false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Protocols API
+// ---------------------------------------------------------------------------
+
+export interface Protocol {
+  id: string
+  name: string
+  description: string
+  category: string
+  icon: string
+  integration_prompt: string
+  sdk_package?: string | null
+  docs_url?: string | null
+}
+
+export interface SuggestedProtocol {
+  id: string
+  name: string
+  description: string
+  category: string
+  icon: string
+  reason: string
+}
+
+/**
+ * Fetch the curated list of Stellar ecosystem protocols.
+ * Optionally filter by category.
+ */
+export async function fetchProtocols(category?: string): Promise<Protocol[]> {
+  try {
+    const url = new URL(`${API_URL}/api/v1/protocols`)
+    if (category) url.searchParams.set('category', category)
+    const response = await fetch(url.toString())
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to fetch protocols:', e)
+    return []
+  }
+}
+
+/**
+ * Ask the AI to suggest protocols that complement the current DApp.
+ */
+export async function fetchSuggestedProtocols(
+  templateType: string,
+  contractSpec: Record<string, unknown>,
+  currentProtocols: string[] = [],
+): Promise<SuggestedProtocol[]> {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/protocols/suggest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        template_type: templateType,
+        contract_spec: contractSpec,
+        current_protocols: currentProtocols,
+      }),
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const data = await response.json()
+    return data.suggestions ?? []
+  } catch (e) {
+    console.error('Failed to fetch protocol suggestions:', e)
+    return []
+  }
+}
+
+/**
+ * Fetch available protocol categories.
+ */
+export async function fetchProtocolCategories(): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/protocols/categories`)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return await response.json()
+  } catch (e) {
+    console.error('Failed to fetch categories:', e)
+    return []
   }
 }
