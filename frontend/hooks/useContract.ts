@@ -3,17 +3,13 @@
 
 export const useContractHook = `
 import { useState, useCallback } from 'react';
-import {
-  SorobanRpc,
-  Contract,
-  TransactionBuilder,
-  Networks,
-  Address,
-  nativeToScVal,
-  scValToNative,
-  xdr,
-} from '@stellar/stellar-sdk';
+import * as Stellar from '@stellar/stellar-sdk';
 import { CONTRACT_ID, SOROBAN_RPC_URL, STELLAR_NETWORK } from '../lib/stellar';
+
+const { Contract, TransactionBuilder, Networks, Address, nativeToScVal, scValToNative, xdr } = Stellar;
+// Handle both old (v11 SorobanRpc) and new (v12+ rpc) SDK namespaces
+const SorobanRpc = Stellar.rpc || Stellar.SorobanRpc;
+console.log('[useContract] SDK loaded, rpc namespace:', SorobanRpc ? 'found' : 'MISSING');
 
 const PASSPHRASE = STELLAR_NETWORK === 'testnet'
   ? Networks.TESTNET
@@ -32,17 +28,25 @@ function i128(val) { return { __soroban_type: 'i128', value: val }; }
 function u32(val) { return { __soroban_type: 'u32', value: val }; }
 function sorobanString(val) { return { __soroban_type: 'string', value: val }; }
 function sorobanBool(val) { return { __soroban_type: 'bool', value: val }; }
+function sorobanSymbol(val) { return { __soroban_type: 'symbol', value: val }; }
+
+// #region agent log
+function _dbg(loc, msg, data, hId) { try { var p = {location:loc,message:msg,data:data,timestamp:Date.now(),hypothesisId:hId}; var s = JSON.stringify(p); console.warn('[DBG]', s); try{window.top.postMessage({type:'__dbg_log',payload:p},'*')}catch(e2){try{window.parent.postMessage({type:'__dbg_log',payload:p},'*')}catch(e3){}} } catch(e){ console.warn('[DBG-ERR]', loc, msg, e.message); } }
+// #endregion
 
 /**
  * Convert a JS value to a Soroban ScVal.
  * Handles typed wrappers (u64, i128, etc.) and uses smart heuristics for unwrapped values.
  */
 function toScVal(value) {
+  // #region agent log
+  _dbg('toScVal','entry',{valueType:typeof value,isSymbol:typeof value==='symbol',repr:typeof value==='symbol'?('SYM:'+String(value.description)):(typeof value==='object'?(value?(value.__soroban_type||'obj:'+Object.keys(value).join(',')):'null'):String(value).substring(0,100))},'H1');
+  // #endregion
   if (value === null || value === undefined) {
     return xdr.ScVal.scvVoid();
   }
 
-  // Handle typed wrappers from u64(), i128(), etc.
+  // Handle typed wrappers from u64(), i128(), sorobanSymbol(), etc.
   if (value && typeof value === 'object' && value.__soroban_type) {
     const raw = value.value;
     switch (value.__soroban_type) {
@@ -54,6 +58,8 @@ function toScVal(value) {
         return nativeToScVal(BigInt(String(raw).trim()), { type: 'i128' });
       case 'string':
         return nativeToScVal(String(raw), { type: 'string' });
+      case 'symbol':
+        return xdr.ScVal.scvSymbol(String(raw));
       case 'bool':
         return nativeToScVal(Boolean(raw));
       default:
@@ -68,6 +74,14 @@ function toScVal(value) {
   // Boolean
   if (typeof value === 'boolean') {
     return nativeToScVal(value);
+  }
+  // JavaScript Symbol → Soroban Symbol (e.g., Symbol('Heads') → scvSymbol('Heads'))
+  if (typeof value === 'symbol') {
+    return xdr.ScVal.scvSymbol(value.description || '');
+  }
+  // BigInt → i128
+  if (typeof value === 'bigint') {
+    return nativeToScVal(value, { type: 'i128' });
   }
   // Number (typeof number) → u64 (most contract IDs, counts, timestamps are u64)
   if (typeof value === 'number') {
@@ -84,8 +98,20 @@ function toScVal(value) {
   if (typeof value === 'string') {
     return nativeToScVal(value, { type: 'string' });
   }
-  // Fallback
-  return nativeToScVal(value);
+  // Array → Soroban Vec
+  if (Array.isArray(value)) {
+    return xdr.ScVal.scvVec(value.map(toScVal));
+  }
+  // Fallback — graceful: try nativeToScVal, fall back to string conversion
+  // #region agent log
+  _dbg('toScVal','FALLBACK-HIT',{valueType:typeof value,ctorName:value&&value.constructor?value.constructor.name:'N/A'},'H1');
+  // #endregion
+  try {
+    return nativeToScVal(value);
+  } catch (e) {
+    // Last resort: convert to string to avoid crash
+    return nativeToScVal(String(value), { type: 'string' });
+  }
 }
 
 /**
@@ -178,6 +204,10 @@ export function useContract(contractId = CONTRACT_ID) {
 
       // ── Live mode: real Soroban transaction ──
       console.log('%c[Live] invoke:', 'color: #4ade80', method, args);
+      // #region agent log
+      var _ai = {}; try{Object.keys(args).forEach(function(k){var v=args[k]; _ai[k]={type:typeof v,isSymbol:typeof v==='symbol',repr:typeof v==='symbol'?('SYM:'+String(v.description)):(typeof v==='object'?(v?JSON.stringify(v).substring(0,100):'null'):String(v).substring(0,80))};})}catch(ex){_ai._err=ex.message;}
+      _dbg('invoke','called',{method:method,argKeys:Object.keys(args),argDetails:_ai},'H5');
+      // #endregion
 
       const server = new SorobanRpc.Server(SOROBAN_RPC_URL);
       const account = await server.getAccount(publicKey);
@@ -245,7 +275,10 @@ export function useContract(contractId = CONTRACT_ID) {
 
       throw new Error('Transaction ' + (result ? result.status : 'timed out'));
     } catch (err) {
-      console.error('[useContract] invoke error:', err);
+      // #region agent log
+      _dbg('invoke','ERROR',{method:method,errMsg:err.message,errName:err.name,errStack:err.stack?err.stack.substring(0,500):'none'},'H4');
+      console.error('[useContract] invoke FAILED — method:', method, '| error:', err.message, '| args:', JSON.stringify(Object.keys(args)), '| stack:', err.stack);
+      // #endregion
       setError(err.message || 'Transaction failed');
       setTxStatus('failed');
       setLoading(false);
@@ -341,10 +374,11 @@ export function useContract(contractId = CONTRACT_ID) {
     u64,
     i128,
     u32,
+    sorobanSymbol,
   };
 }
 
 // Also export type helpers at module level for direct import
-export { u64, i128, u32, sorobanString, sorobanBool };
+export { u64, i128, u32, sorobanString, sorobanBool, sorobanSymbol };
 export default useContract;
 `;

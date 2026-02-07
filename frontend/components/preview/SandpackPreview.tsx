@@ -1,6 +1,6 @@
 'use client'
 
-import { Component, type ReactNode, useState } from 'react'
+import { Component, type ReactNode, useState, useEffect } from 'react'
 import {
   SandpackProvider,
   SandpackPreview as SandpackPreviewComponent,
@@ -95,7 +95,7 @@ root.render(<App />);
 
 const dependencies = {
   '@stellar/freighter-api': '^2.0.0',
-  '@stellar/stellar-sdk': '^11.2.2',
+  '@stellar/stellar-sdk': '14.4.3',
 }
 
 const customTheme = {
@@ -224,6 +224,22 @@ export function SandpackPreview(props: SandpackPreviewProps) {
 
   // Activate parent-side bridge listener when wallet is connected
   useWalletBridge(walletAddress ?? null)
+
+  // #region agent log — forward Sandpack debug messages to log file via local API
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data && e.data.type === '__dbg_log' && e.data.payload) {
+        fetch('/api/debug-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(e.data.payload),
+        }).catch(() => {})
+      }
+    }
+    window.addEventListener('message', handler)
+    return () => window.removeEventListener('message', handler)
+  }, [])
+  // #endregion
 
   const allFiles: Record<string, string> = {
     ...getDefaultFiles(contractId, walletAddress),

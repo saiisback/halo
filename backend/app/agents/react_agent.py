@@ -37,10 +37,12 @@ REACT_AGENT_SYSTEM_PROMPT = """You generate COMPLETE App.jsx for Stellar DApps. 
 
 RULES:
 - `export default function App()` with `import { useState } from 'react'`, `import { useContract } from './hooks/useContract'`, `import './index.css'`
-- Destructure: `const { invoke, query, loading, error, txStatus, getPublicKey, u64, i128 } = useContract();`
+- Destructure: `const { invoke, query, loading, error, txStatus, getPublicKey, u64, i128, u32, sorobanSymbol } = useContract();`
 - invoke('method', {args}) for writes, query('method', {args}) for reads
+- CRITICAL: Use EXACT function names from CONTRACT FUNCTIONS below. Do NOT rename or invent method names. The method string must match the Rust fn name exactly.
 - Every handler: `const pubKey = await getPublicKey(); if (!pubKey) return;`
-- Type wrapping: Address→string, u64 params→u64(), i128 params→i128(), String→string, bool→true/false
+- Type wrapping: Address→pass pubKey string directly, u64 params→u64(number), i128 params→i128(amount), u32→u32(number), Symbol→sorobanSymbol('value'), String→pass string directly, bool→true/false
+- For enum-like u64 params (e.g., choice 0 or 1): use u64(0) or u64(1) with a dropdown mapping display labels to numeric values
 - CSS classes: container, card, card-header, btn, btn-secondary, input, label, status success/error, text-muted, spinner
 - Dates: use `<input type="datetime-local">`, convert with `Math.floor(new Date(val).getTime()/1000)`
 - Keep simple: 2-4 cards, balanced braces, complete code from first import to final `}`"""
@@ -258,11 +260,15 @@ def extract_function_signatures(rust_code: str) -> str:
                 if 'Address' in ptype:
                     param_hints.append(f"{pname}: pass pubKey string directly")
                 elif ptype == 'u64':
-                    param_hints.append(f"{pname}: wrap with u64()")
+                    param_hints.append(f"{pname}: wrap with u64(number)")
+                elif ptype == 'u32':
+                    param_hints.append(f"{pname}: wrap with u32(number)")
                 elif ptype == 'i128':
-                    param_hints.append(f"{pname}: wrap with i128()")
+                    param_hints.append(f"{pname}: wrap with i128(amount)")
                 elif ptype == 'bool':
                     param_hints.append(f"{pname}: pass true/false")
+                elif ptype == 'Symbol':
+                    param_hints.append(f"{pname}: wrap with sorobanSymbol('value')")
                 elif ptype == 'String':
                     param_hints.append(f"{pname}: pass string directly")
                 else:
