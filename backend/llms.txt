@@ -124,11 +124,23 @@ env.crypto().keccak256(&bytes) -> BytesN<32>
 env.crypto().ed25519_verify(&public_key, &message, &signature) -> bool
 ```
 
-### Random Numbers
+### Random Numbers (PRNG) — IMPORTANT: use ONLY these methods!
 ```rust
-env.prng().gen::<u64>()             // Generate random u64
-env.prng().gen_range::<u64>(min..max)  // Generate in range
+env.prng().gen::<u64>()                   // Generate random u64
+env.prng().gen_range::<u64>(0..100)       // Random u64 in [0, 100)
+env.prng().gen_range::<u64>(1..=6)        // Random u64 in [1, 6] (dice roll)
+env.prng().gen_range::<u64>(0..2)         // Coin flip: 0 or 1
+env.prng().u64_in_range(0..=1)            // Also coin flip (u64 helper)
+env.prng().gen_len::<Bytes>(32)           // Random Bytes of length 32
+env.prng().fill(&mut value)               // Fill type with random data
+env.prng().shuffle(&mut vec)              // Shuffle a Vec
+env.prng().seed(bytes)                    // Reseed the PRNG
 ```
+⚠️ FORBIDDEN methods (DO NOT EXIST):
+- `env.prng().random_bytes()` — DOES NOT EXIST
+- `env.prng().random()` — DOES NOT EXIST
+- `env.prng().next()` — DOES NOT EXIST
+- `env.prng().rand()` — DOES NOT EXIST
 
 ## ⚠️ CRITICAL MISTAKES TO AVOID (SDK 21)
 

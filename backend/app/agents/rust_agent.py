@@ -718,6 +718,89 @@ impl Marketplace {
     }
 }'''
 
+WORKING_COIN_FLIP = '''#![no_std]
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};
+
+#[contracttype]
+#[derive(Clone)]
+pub struct Bet {
+    pub player: Address,
+    pub amount: u64,
+    pub choice: u64,
+    pub result: u64,
+    pub won: bool,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub enum DataKey {
+    Admin,
+    BetCount,
+    Bet(u64),
+    Wins(Address),
+    Losses(Address),
+}
+
+#[contract]
+pub struct CoinFlipGame;
+
+#[contractimpl]
+impl CoinFlipGame {
+    pub fn initialize(env: Env, admin: Address) {
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::BetCount, &0u64);
+    }
+
+    pub fn flip(env: Env, player: Address, choice: u64, amount: u64) -> bool {
+        player.require_auth();
+        if choice > 1 {
+            panic!("choice must be 0 (heads) or 1 (tails)");
+        }
+
+        let result: u64 = env.prng().gen_range::<u64>(0..2);
+        let won = result == choice;
+
+        let mut count: u64 = env.storage().instance().get(&DataKey::BetCount).unwrap_or(0);
+        count += 1;
+
+        let bet = Bet {
+            player: player.clone(),
+            amount,
+            choice,
+            result,
+            won,
+        };
+        env.storage().instance().set(&DataKey::Bet(count), &bet);
+        env.storage().instance().set(&DataKey::BetCount, &count);
+
+        if won {
+            let wins: u64 = env.storage().instance().get(&DataKey::Wins(player.clone())).unwrap_or(0);
+            env.storage().instance().set(&DataKey::Wins(player.clone()), &(wins + 1));
+        } else {
+            let losses: u64 = env.storage().instance().get(&DataKey::Losses(player.clone())).unwrap_or(0);
+            env.storage().instance().set(&DataKey::Losses(player.clone()), &(losses + 1));
+        }
+
+        env.events().publish((Symbol::new(&env, "flip"),), (player, choice, result, won));
+        won
+    }
+
+    pub fn get_bet(env: Env, id: u64) -> Bet {
+        env.storage().instance().get(&DataKey::Bet(id)).unwrap()
+    }
+
+    pub fn get_stats(env: Env, player: Address) -> (u64, u64) {
+        let wins: u64 = env.storage().instance().get(&DataKey::Wins(player.clone())).unwrap_or(0);
+        let losses: u64 = env.storage().instance().get(&DataKey::Losses(player.clone())).unwrap_or(0);
+        (wins, losses)
+    }
+
+    pub fn get_bet_count(env: Env) -> u64 {
+        env.storage().instance().get(&DataKey::BetCount).unwrap_or(0)
+    }
+}'''
+
 WORKING_RPS = '''#![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};
 
@@ -874,8 +957,19 @@ WORKING_TEMPLATES = {
     "raffle": WORKING_LOTTERY,
     "prize": WORKING_LOTTERY,
     "random": WORKING_LOTTERY,
-    # Game (Rock Paper Scissors)
-    "game": WORKING_RPS,
+    # Coin Flip / Dice / Gambling
+    "coinflip": WORKING_COIN_FLIP,
+    "coin_flip": WORKING_COIN_FLIP,
+    "flip": WORKING_COIN_FLIP,
+    "dice": WORKING_COIN_FLIP,
+    "bet": WORKING_COIN_FLIP,
+    "betting": WORKING_COIN_FLIP,
+    "gambling": WORKING_COIN_FLIP,
+    "coin": WORKING_COIN_FLIP,
+    "heads": WORKING_COIN_FLIP,
+    "tails": WORKING_COIN_FLIP,
+    # Game (Rock Paper Scissors by default, but coin flip for random games)
+    "game": WORKING_COIN_FLIP,
     "rock_paper_scissors": WORKING_RPS,
     "rps": WORKING_RPS,
     "rock_paper": WORKING_RPS,
@@ -1002,6 +1096,26 @@ client.transfer(&from, &to, &amount);
 - Do NOT use complex initialization patterns — use a simple initialize(env, admin) function
 - Store the admin Address directly from the parameter, never construct it
 - If a value is optional, use a bool flag in storage, not Option types
+
+### Rule 13: PRNG (Random Numbers) — CORRECT API
+```rust
+env.prng().gen::<u64>()                  // random u64
+env.prng().gen_range::<u64>(0..100)      // random u64 in range [0, 100)
+env.prng().u64_in_range(0..=1)           // random u64 in range [0, 1] inclusive
+env.prng().gen_range::<u64>(0..2)        // coin flip: 0 or 1
+env.prng().shuffle(&mut vec)             // shuffle a Vec
+env.prng().seed(bytes)                   // reseed
+env.prng().gen_len::<Bytes>(32)          // random Bytes of length 32
+```
+- FORBIDDEN: `env.prng().random_bytes()` — DOES NOT EXIST
+- FORBIDDEN: `env.prng().random()` — DOES NOT EXIST
+- FORBIDDEN: `env.prng().next()` — DOES NOT EXIST
+- FORBIDDEN: `env.prng().rand()` — DOES NOT EXIST
+- FORBIDDEN: `env.prng().u64()` — DOES NOT EXIST (use gen::<u64>() instead)
+- FORBIDDEN: `env.prng().u32()` — DOES NOT EXIST (use gen::<u64>() instead)
+- For coin flips: use `env.prng().gen_range::<u64>(0..2)` (returns 0 or 1)
+- For dice rolls: use `env.prng().gen_range::<u64>(1..=6)`
+- For picking random index: use `env.prng().gen_range::<u64>(0..count as u64)`
 """
 
 
@@ -1081,6 +1195,11 @@ RUST_FIX_ERROR_PROMPT = """Fix this Soroban contract compilation error. Output t
 - "no function or associated item named `from_account_id`" → Address::from_account_id DOES NOT EXIST. Get addresses from function params or storage. NEVER construct addresses.
 - "no function or associated item named `from_bytes`" on Address → DOES NOT EXIST. Use function params.
 - "no function or associated item named `from_public_key`" → DOES NOT EXIST. Use function params.
+- "no method named `random_bytes`" on Prng → DOES NOT EXIST. Use `env.prng().gen_range::<u64>(0..N)` for random number in [0,N), or `env.prng().gen::<u64>()` for random u64, or `env.prng().gen_len::<Bytes>(N)` for random bytes of length N.
+- "no method named `random`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` instead.
+- "no method named `next`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` instead.
+- "no method named `u64`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` for random u64, or `env.prng().gen_range::<u64>(0..2)` for coin flip.
+- "no method named `u32`" on Prng → DOES NOT EXIST. Use `env.prng().gen::<u64>()` instead.
 
 ## SPECIFICATION:
 - Name: {name}
@@ -1118,6 +1237,10 @@ async def generate_rust_contract(
     if not reference_template:
         reference_template = WORKING_TOKEN_VAULT  # Default fallback
 
+    # #region agent log
+    _debug_log("D", "rust_agent.py:generate_rust_contract", "template selected", {"template_type": template_type, "description": description[:200], "template_has_prng": "prng()" in reference_template, "template_len": len(reference_template)})
+    # #endregion
+
     logger.info(f"[RUST_AGENT] Using reference template ({len(reference_template)} chars)")
 
     # Format specification (keep concise for context window)
@@ -1132,6 +1255,10 @@ async def generate_rust_contract(
         # Try aggressive auto-fix before asking LLM
         fixed_code = previous_code
         fixed_code, fixes = validate_and_fix_common_issues(fixed_code)
+
+        # #region agent log
+        _debug_log("B", "rust_agent.py:generate_rust_contract", "auto-fix result", {"fixes_applied": fixes, "still_has_random_bytes": "random_bytes" in fixed_code})
+        # #endregion
 
         if fixes:
             logger.info(f"[RUST_AGENT] Auto-fixes applied: {fixes}")
@@ -1164,6 +1291,10 @@ async def generate_rust_contract(
         if response:
             code = extract_rust_code(response)
             code = cleanup_rust_code(code)
+
+            # #region agent log
+            _debug_log("C", "rust_agent.py:generate_rust_contract", "LLM fix response", {"code_len": len(code), "has_random_bytes": "random_bytes" in code, "has_gen_range": "gen_range" in code, "has_prng": "prng()" in code, "code_first_500": code[:500]})
+            # #endregion
 
             # Pre-validate before returning
             is_valid, pre_errors = pre_validate_code(code)
@@ -1388,6 +1519,12 @@ def pre_validate_code(code: str) -> tuple[bool, list[str]]:
     if 'use std::' in code or '::std::' in code:
         errors.append("ERROR: Cannot use std:: in no_std environment")
 
+    # Check 9: Hallucinated PRNG methods
+    hallucinated_prng_methods = ['random_bytes', 'random()', 'next()', 'rand()', 'next_u64()', 'next_u32()', 'u64()', 'u32()', 'gen_u64()', 'random_u64()']
+    for method in hallucinated_prng_methods:
+        if f'prng().{method}' in code or f'prng(). {method}' in code:
+            errors.append(f"ERROR: prng().{method} DOES NOT EXIST. Use gen::<u64>(), gen_range::<u64>(min..max), or u64_in_range(min..max)")
+
     return len(errors) == 0, errors
 
 
@@ -1574,6 +1711,35 @@ def validate_and_fix_common_issues(code: str) -> tuple[str, list[str]]:
     if re.search(r'Bytes::from\s*\(', code):
         code = re.sub(r'Bytes::from\s*\(&env\s*,', 'Bytes::from_slice(&env,', code)
         fixes_applied.append('Changed Bytes::from() to Bytes::from_slice()')
+
+    # Fix 14: Hallucinated PRNG methods — these DO NOT EXIST in SDK 21
+    # env.prng().random_bytes(N) → env.prng().gen_range::<u64>(0..N)
+    # env.prng().random() → env.prng().gen::<u64>()
+    # env.prng().next() → env.prng().gen::<u64>()
+    # env.prng().rand() → env.prng().gen::<u64>()
+    hallucinated_prng = [
+        (r'env\.prng\(\)\s*\.\s*random_bytes\s*\(\s*\d+\s*\)', 'env.prng().gen::<u64>()', 'random_bytes'),
+        (r'env\.prng\(\)\s*\.\s*random\s*\(\s*\)', 'env.prng().gen::<u64>()', 'random'),
+        (r'env\.prng\(\)\s*\.\s*next\s*\(\s*\)', 'env.prng().gen::<u64>()', 'next'),
+        (r'env\.prng\(\)\s*\.\s*rand\s*\(\s*\)', 'env.prng().gen::<u64>()', 'rand'),
+        (r'env\.prng\(\)\s*\.\s*next_u64\s*\(\s*\)', 'env.prng().gen::<u64>()', 'next_u64'),
+        (r'env\.prng\(\)\s*\.\s*next_u32\s*\(\s*\)', 'env.prng().gen::<u64>()', 'next_u32'),
+        (r'env\.prng\(\)\s*\.\s*u64\s*\(\s*\)', 'env.prng().gen::<u64>()', 'u64'),
+        (r'env\.prng\(\)\s*\.\s*u32\s*\(\s*\)', 'env.prng().gen::<u64>()', 'u32'),
+        (r'env\.prng\(\)\s*\.\s*gen_u64\s*\(\s*\)', 'env.prng().gen::<u64>()', 'gen_u64'),
+        (r'env\.prng\(\)\s*\.\s*random_u64\s*\(\s*\)', 'env.prng().gen::<u64>()', 'random_u64'),
+    ]
+    for pattern, replacement, method_name in hallucinated_prng:
+        if re.search(pattern, code):
+            code = re.sub(pattern, replacement, code)
+            fixes_applied.append(f'Replaced hallucinated prng().{method_name}() with {replacement}')
+
+    # Also fix: let x = env.prng().random_bytes(N); ... x[0] % 2 pattern → env.prng().gen_range::<u64>(0..2)
+    # This catches the common coin-flip pattern where random_bytes is used to generate a random number
+    if re.search(r'random_bytes', code):
+        # Broader catch: replace any remaining random_bytes calls
+        code = re.sub(r'env\.prng\(\)\s*\.\s*random_bytes\s*\([^)]*\)', 'env.prng().gen::<u64>()', code)
+        fixes_applied.append('Replaced remaining random_bytes calls with gen::<u64>()')
 
     return code, fixes_applied
 
