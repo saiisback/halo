@@ -20,6 +20,7 @@ import logging
 from typing import TypedDict
 
 from app.core.llm import generate_completion
+from app.core.memory import get_memory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -894,6 +895,223 @@ impl RockPaperScissors {
     }
 }'''
 
+WORKING_STAKING = '''#![no_std]
+use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Symbol};
+
+#[contracttype]
+#[derive(Clone)]
+pub struct StakeInfo {
+    pub amount: i128,
+    pub staked_at: u64,
+    pub reward_claimed: i128,
+}
+
+#[contracttype]
+#[derive(Clone)]
+pub enum DataKey {
+    Admin,
+    Token,
+    RewardToken,
+    StakeInfo(Address),
+    TotalStaked,
+    RewardRate,
+}
+
+#[contract]
+pub struct StakingContract;
+
+#[contractimpl]
+impl StakingContract {
+    pub fn initialize(env: Env, admin: Address, token: Address, reward_token: Address, reward_rate: i128) {
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::Token, &token);
+        env.storage().instance().set(&DataKey::RewardToken, &reward_token);
+        env.storage().instance().set(&DataKey::RewardRate, &reward_rate);
+        env.storage().instance().set(&DataKey::TotalStaked, &0i128);
+    }
+
+    pub fn stake(env: Env, user: Address, amount: i128) {
+        user.require_auth();
+        if amount <= 0 {
+            panic!("amount must be positive");
+        }
+
+        let token_addr: Address = env.storage().instance().get(&DataKey::Token).unwrap();
+        let client = token::Client::new(&env, &token_addr);
+        client.transfer(&user, &env.current_contract_address(), &amount);
+
+        let stake_key = DataKey::StakeInfo(user.clone());
+        let mut info: StakeInfo = env.storage().instance().get(&stake_key).unwrap_or(StakeInfo {
+            amount: 0,
+            staked_at: env.ledger().timestamp(),
+            reward_claimed: 0,
+        });
+        info.amount += amount;
+        env.storage().instance().set(&stake_key, &info);
+
+        let total: i128 = env.storage().instance().get(&DataKey::TotalStaked).unwrap_or(0);
+        env.storage().instance().set(&DataKey::TotalStaked, &(total + amount));
+
+        env.events().publish((Symbol::new(&env, "staked"),), (user, amount));
+    }
+
+    pub fn unstake(env: Env, user: Address, amount: i128) {
+        user.require_auth();
+
+        let stake_key = DataKey::StakeInfo(user.clone());
+        let mut info: StakeInfo = env.storage().instance().get(&stake_key).unwrap();
+        if info.amount < amount {
+            panic!("insufficient stake");
+        }
+
+        let token_addr: Address = env.storage().instance().get(&DataKey::Token).unwrap();
+        let client = token::Client::new(&env, &token_addr);
+        client.transfer(&env.current_contract_address(), &user, &amount);
+
+        info.amount -= amount;
+        env.storage().instance().set(&stake_key, &info);
+
+        let total: i128 = env.storage().instance().get(&DataKey::TotalStaked).unwrap_or(0);
+        env.storage().instance().set(&DataKey::TotalStaked, &(total - amount));
+
+        env.events().publish((Symbol::new(&env, "unstaked"),), (user, amount));
+    }
+
+    pub fn claim_rewards(env: Env, user: Address) -> i128 {
+        user.require_auth();
+
+        let stake_key = DataKey::StakeInfo(user.clone());
+        let mut info: StakeInfo = env.storage().instance().get(&stake_key).unwrap();
+        let rate: i128 = env.storage().instance().get(&DataKey::RewardRate).unwrap_or(0);
+
+        let duration = (env.ledger().timestamp() - info.staked_at) as i128;
+        let reward = (info.amount * rate * duration) / 1_000_000 - info.reward_claimed;
+
+        if reward > 0 {
+            let reward_token: Address = env.storage().instance().get(&DataKey::RewardToken).unwrap();
+            let client = token::Client::new(&env, &reward_token);
+            client.transfer(&env.current_contract_address(), &user, &reward);
+            info.reward_claimed += reward;
+            env.storage().instance().set(&stake_key, &info);
+        }
+
+        env.events().publish((Symbol::new(&env, "claimed"),), (user.clone(), reward));
+        reward
+    }
+
+    pub fn get_stake(env: Env, user: Address) -> StakeInfo {
+        let stake_key = DataKey::StakeInfo(user);
+        env.storage().instance().get(&stake_key).unwrap_or(StakeInfo {
+            amount: 0,
+            staked_at: 0,
+            reward_claimed: 0,
+        })
+    }
+
+    pub fn get_total_staked(env: Env) -> i128 {
+        env.storage().instance().get(&DataKey::TotalStaked).unwrap_or(0)
+    }
+}'''
+
+WORKING_LIQUIDITY_POOL = '''#![no_std]
+use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Symbol};
+
+#[contracttype]
+#[derive(Clone)]
+pub enum DataKey {
+    Admin,
+    TokenA,
+    TokenB,
+    ReserveA,
+    ReserveB,
+    TotalShares,
+    Shares(Address),
+}
+
+#[contract]
+pub struct LiquidityPool;
+
+#[contractimpl]
+impl LiquidityPool {
+    pub fn initialize(env: Env, admin: Address, token_a: Address, token_b: Address) {
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::TokenA, &token_a);
+        env.storage().instance().set(&DataKey::TokenB, &token_b);
+        env.storage().instance().set(&DataKey::ReserveA, &0i128);
+        env.storage().instance().set(&DataKey::ReserveB, &0i128);
+        env.storage().instance().set(&DataKey::TotalShares, &0i128);
+    }
+
+    pub fn add_liquidity(env: Env, user: Address, amount_a: i128, amount_b: i128) -> i128 {
+        user.require_auth();
+
+        let token_a: Address = env.storage().instance().get(&DataKey::TokenA).unwrap();
+        let token_b: Address = env.storage().instance().get(&DataKey::TokenB).unwrap();
+        let client_a = token::Client::new(&env, &token_a);
+        let client_b = token::Client::new(&env, &token_b);
+
+        client_a.transfer(&user, &env.current_contract_address(), &amount_a);
+        client_b.transfer(&user, &env.current_contract_address(), &amount_b);
+
+        let reserve_a: i128 = env.storage().instance().get(&DataKey::ReserveA).unwrap_or(0);
+        let reserve_b: i128 = env.storage().instance().get(&DataKey::ReserveB).unwrap_or(0);
+        let total_shares: i128 = env.storage().instance().get(&DataKey::TotalShares).unwrap_or(0);
+
+        let shares = if total_shares == 0 {
+            amount_a + amount_b
+        } else {
+            let share_a = (amount_a * total_shares) / reserve_a;
+            let share_b = (amount_b * total_shares) / reserve_b;
+            if share_a < share_b { share_a } else { share_b }
+        };
+
+        let share_key = DataKey::Shares(user.clone());
+        let user_shares: i128 = env.storage().instance().get(&share_key).unwrap_or(0);
+        env.storage().instance().set(&share_key, &(user_shares + shares));
+        env.storage().instance().set(&DataKey::ReserveA, &(reserve_a + amount_a));
+        env.storage().instance().set(&DataKey::ReserveB, &(reserve_b + amount_b));
+        env.storage().instance().set(&DataKey::TotalShares, &(total_shares + shares));
+
+        env.events().publish((Symbol::new(&env, "liquidity_added"),), (user, shares));
+        shares
+    }
+
+    pub fn swap_a_to_b(env: Env, user: Address, amount_in: i128) -> i128 {
+        user.require_auth();
+
+        let token_a: Address = env.storage().instance().get(&DataKey::TokenA).unwrap();
+        let token_b: Address = env.storage().instance().get(&DataKey::TokenB).unwrap();
+        let reserve_a: i128 = env.storage().instance().get(&DataKey::ReserveA).unwrap();
+        let reserve_b: i128 = env.storage().instance().get(&DataKey::ReserveB).unwrap();
+
+        let amount_out = (amount_in * reserve_b) / (reserve_a + amount_in);
+
+        let client_a = token::Client::new(&env, &token_a);
+        let client_b = token::Client::new(&env, &token_b);
+        client_a.transfer(&user, &env.current_contract_address(), &amount_in);
+        client_b.transfer(&env.current_contract_address(), &user, &amount_out);
+
+        env.storage().instance().set(&DataKey::ReserveA, &(reserve_a + amount_in));
+        env.storage().instance().set(&DataKey::ReserveB, &(reserve_b - amount_out));
+
+        env.events().publish((Symbol::new(&env, "swapped"),), (user, amount_in, amount_out));
+        amount_out
+    }
+
+    pub fn get_reserves(env: Env) -> (i128, i128) {
+        let a: i128 = env.storage().instance().get(&DataKey::ReserveA).unwrap_or(0);
+        let b: i128 = env.storage().instance().get(&DataKey::ReserveB).unwrap_or(0);
+        (a, b)
+    }
+
+    pub fn get_shares(env: Env, user: Address) -> i128 {
+        let share_key = DataKey::Shares(user);
+        env.storage().instance().get(&share_key).unwrap_or(0)
+    }
+}'''
+
 # Map template types to working examples — comprehensive keyword coverage
 WORKING_TEMPLATES = {
     # Token/Vault
@@ -901,12 +1119,25 @@ WORKING_TEMPLATES = {
     "vault": WORKING_TOKEN_VAULT,
     "deposit": WORKING_TOKEN_VAULT,
     "withdraw": WORKING_TOKEN_VAULT,
-    "staking": WORKING_TOKEN_VAULT,
     "savings": WORKING_TOKEN_VAULT,
     "treasury": WORKING_TOKEN_VAULT,
     "token_vault": WORKING_TOKEN_VAULT,
     "wallet": WORKING_TOKEN_VAULT,
     "bank": WORKING_TOKEN_VAULT,
+    # Staking (dedicated template with composite storage keys)
+    "staking": WORKING_STAKING,
+    "stake": WORKING_STAKING,
+    "yield": WORKING_STAKING,
+    "farming": WORKING_STAKING,
+    "reward": WORKING_STAKING,
+    "rewards": WORKING_STAKING,
+    "yield_farming": WORKING_STAKING,
+    # Liquidity Pool / DEX
+    "liquidity": WORKING_LIQUIDITY_POOL,
+    "pool": WORKING_LIQUIDITY_POOL,
+    "amm": WORKING_LIQUIDITY_POOL,
+    "dex": WORKING_LIQUIDITY_POOL,
+    "liquidity_pool": WORKING_LIQUIDITY_POOL,
     # Crowdfunding
     "crowdfunding": WORKING_CROWDFUNDING,
     "fundraising": WORKING_CROWDFUNDING,
@@ -990,7 +1221,7 @@ def format_docs_context(docs_context: list[str]) -> str:
     """Format documentation context from RAG for prompt injection."""
     if not docs_context:
         return ""
-    # Keep docs short to fit GPT-5's input token limit
+    # Keep docs short to fit context window
     combined = "\n\n".join(docs_context[:2])
     if len(combined) > 1500:
         combined = combined[:1500]
@@ -1040,17 +1271,29 @@ debug-assertions = true
 
 SDK_CHEAT_SHEET = """## SOROBAN SDK 21.0.0 — MANDATORY RULES (violating ANY = compilation failure)
 
-### Rule 1: STORAGE takes REFERENCES (always use &)
+### Rule 1: STORAGE takes REFERENCES (always use &) — THIS IS THE #1 BUG SOURCE
 ```rust
 env.storage().instance().set(&DataKey::X, &value);   // & before key AND value
 env.storage().instance().get(&DataKey::X)             // & before key
 env.storage().instance().has(&DataKey::X)             // & before key
+
+// ALSO when key is stored in a variable — STILL use &, NOT .clone():
+let key = DataKey::Stake(user.clone());
+env.storage().instance().get(&key)                    // CORRECT: & before variable key
+env.storage().instance().set(&key, &value)            // CORRECT: & before variable key
+env.storage().instance().has(&key)                    // CORRECT: & before variable key
+
+// WRONG — these cause "expected `&_`, found `DataKey`":
+env.storage().instance().get(key.clone())             // WRONG: .clone() is for Maps, NOT storage
+env.storage().instance().get(key)                     // WRONG: missing &
+env.storage().instance().get(DataKey::X)              // WRONG: missing &
 ```
 
 ### Rule 2: MAP takes OWNED values (NEVER use & with Map)
 ```rust
-map.get(key.clone())           // CORRECT - owned value
-map.set(key.clone(), value)    // CORRECT - owned value
+map.get(key.clone())           // CORRECT - owned value for Map
+map.set(key.clone(), value)    // CORRECT - owned value for Map
+// NOTE: This is the OPPOSITE of storage — Maps want owned values, storage wants references
 ```
 
 ### Rule 3: Vec uses push_back(), NEVER push()
@@ -1117,7 +1360,46 @@ env.prng().gen_len::<Bytes>(32)          // random Bytes of length 32
 - For dice rolls: use `env.prng().gen_range::<u64>(1..=6)`
 - For picking random index: use `env.prng().gen_range::<u64>(0..count as u64)`
 
-### Rule 14: NO TOKEN TRANSFERS IN SIMPLE GAME CONTRACTS — RE-ENTRY PROTECTION
+### Rule 14: PROTOCOL INTEGRATION PATTERNS — CORRECT SOROBAN PATTERNS FOR DeFi
+When integrating protocols (staking, DEX, lending, etc.), follow these patterns:
+
+```rust
+// --- STAKING CONTRACT PATTERN ---
+#[contracttype]
+#[derive(Clone)]
+pub enum DataKey {
+    StakeInfo(Address),     // Per-user stake info
+    TotalStaked,
+    RewardRate,
+    Token,
+}
+
+// Store a stake with a composite key — ALWAYS use & with storage:
+let stake_key = DataKey::StakeInfo(user.clone());
+env.storage().instance().set(&stake_key, &stake_info);       // CORRECT: &stake_key
+let info: StakeInfo = env.storage().instance().get(&stake_key).unwrap(); // CORRECT: &stake_key
+
+// --- DEX/SWAP INTEGRATION PATTERN ---
+// Call external token contracts for swaps:
+let token_client = token::Client::new(&env, &token_address);
+token_client.transfer(&from, &to, &amount);    // all references
+
+// --- LENDING/BORROWING PATTERN ---
+// Track positions with composite keys:
+let position_key = DataKey::Position(user.clone());
+env.storage().instance().set(&position_key, &position);
+let pos: Position = env.storage().instance().get(&position_key).unwrap();
+
+// --- LIQUIDITY POOL PATTERN ---
+// Store pool state:
+let pool_key = DataKey::Pool(pool_id);
+env.storage().instance().set(&pool_key, &pool);
+
+// Calculate shares (use i128 for token amounts):
+let share: i128 = (amount * total_shares) / total_liquidity;
+```
+
+### Rule 15: NO TOKEN TRANSFERS IN SIMPLE GAME CONTRACTS — RE-ENTRY PROTECTION
 - Soroban FORBIDS contract re-entry. If your contract calls `token::Client::transfer()` during execution, the token contract may call back into your contract, causing "Contract re-entry is not allowed" error.
 - For games (coin flip, dice, RPS, betting): do NOT use `token::Client` or `token::transfer`. Instead, track amounts as `u64` or `i128` in storage. The contract records bets/wins/losses as state — no actual token movement.
 - CORRECT pattern for coin flip / dice / betting:
@@ -1178,12 +1460,13 @@ RUST_AGENT_USER_PROMPT = """Write a Soroban smart contract. You MUST follow the 
 2. `use soroban_sdk::{{...}};` — only imports actually used
 3. ALL enums and structs have `#[contracttype]` AND `#[derive(Clone)]`
 4. `#[contract]` on the struct, `#[contractimpl]` on the impl
-5. Every `storage().instance().get(...)` and `.set(...)` and `.has(...)` uses `&` before keys
+5. Every `storage().instance().get(...)` and `.set(...)` and `.has(...)` uses `&` before keys — BOTH for `&DataKey::X` literals AND for `&variable_key` variables. NEVER use `.clone()` for storage keys!
 6. Every write function has `require_auth()` called FIRST
 7. No `to_string()`, no `format!()`, no `String::from()`, no `Symbol::from()`
 8. Vec uses `push_back()` not `push()`
 9. IDs are u64, amounts are i128
 10. Code ends with `}}` (closing impl and nothing after)
+11. When storing/retrieving with composite keys (e.g., `DataKey::StakeInfo(user)`), store key in a `let` variable and use `&key`, NOT `key.clone()`
 
 Write the COMPLETE lib.rs code now (no markdown, start with #![no_std]):"""
 
@@ -1204,7 +1487,7 @@ RUST_FIX_ERROR_PROMPT = """Fix this Soroban contract compilation error. Output t
 ```
 
 ## COMMON FIXES:
-- "expected `&_`, found `DataKey`" → add & before DataKey: `.get(&DataKey::X)`
+- "expected `&_`, found `DataKey`" → add & before the key: `.get(&DataKey::X)` or `.get(&key)` if using a variable. NEVER use `.get(key.clone())` for storage — .clone() is for Maps only!
 - "expected `T`, found `&T`" on Map → remove &: `map.get(key.clone())`
 - "no method named `push`" → use `.push_back()`
 - "cannot find macro `format`" → use u64 integer instead of string formatting
@@ -1255,6 +1538,16 @@ async def generate_rust_contract(
     logger.info(f"  - Has previous code: {bool(previous_code)}")
     logger.info(f"  - Has error context: {bool(error_context)}")
 
+    # Load agent memory for lessons learned
+    memory = get_memory()
+    lessons = memory.get_lessons_learned()
+    similar_code = memory.get_similar_success(template_type, spec)
+
+    if lessons:
+        logger.info(f"[RUST_AGENT] Injecting lessons learned ({len(lessons)} chars)")
+    if similar_code:
+        logger.info(f"[RUST_AGENT] Found similar successful code ({len(similar_code)} chars)")
+
     # Get best matching working template
     description = spec.get("description", "")
     reference_template = get_best_template(template_type, description)
@@ -1289,6 +1582,7 @@ async def generate_rust_contract(
                 logger.info(f"[RUST_AGENT] Auto-fix incomplete, pre-validation errors: {pre_errors}")
 
         # LLM fix with reference template included for context
+        fix_lessons = lessons if lessons else ""
         user_prompt = RUST_FIX_ERROR_PROMPT.format(
             previous_code=previous_code,
             error=error_context[:3000],
@@ -1296,12 +1590,15 @@ async def generate_rust_contract(
             name=spec.get("name", "MyContract"),
             functions=functions_str[:1000],
         )
+        if fix_lessons:
+            user_prompt = fix_lessons + "\n\n" + user_prompt
 
         response = await generate_completion(
             system_prompt=RUST_AGENT_SYSTEM_PROMPT,
             user_prompt=user_prompt,
             temperature=0.0,
             max_tokens=16384,
+            thinking=True,
         )
 
         if response:
@@ -1325,6 +1622,13 @@ async def generate_rust_contract(
     # Format documentation from RAG pipeline
     docs_context_section = format_docs_context(docs_context)
 
+    # Build memory context sections
+    memory_sections = ""
+    if lessons:
+        memory_sections += "\n\n" + lessons
+    if similar_code:
+        memory_sections += f"\n\n## PREVIOUSLY SUCCESSFUL CODE (similar spec):\n```rust\n{similar_code}\n```"
+
     user_prompt = RUST_AGENT_USER_PROMPT.format(
         reference_template=reference_template,
         docs_context_section=docs_context_section,
@@ -1335,13 +1639,17 @@ async def generate_rust_contract(
         business_logic=business_logic_str,
     )
 
+    if memory_sections:
+        user_prompt = memory_sections + "\n\n" + user_prompt
+
     logger.info(f"[RUST_AGENT] User prompt length: {len(user_prompt)} chars")
 
     response = await generate_completion(
         system_prompt=RUST_AGENT_SYSTEM_PROMPT,
         user_prompt=user_prompt,
-        temperature=0.0,  # Deterministic — nail it on first try
+        temperature=0.0,
         max_tokens=16384,
+        thinking=True,
     )
 
     if not response:
@@ -1481,17 +1789,36 @@ def pre_validate_code(code: str) -> tuple[bool, list[str]]:
     """
     errors = []
 
-    # Check 1a: Storage.get() WITHOUT reference (should have &)
+    # Check 1a: Storage.get() WITHOUT reference (should have &) — direct DataKey::
     if re.search(r'storage\(\)[^;]*\.get\s*\(\s*DataKey::', code) and not re.search(r'storage\(\)[^;]*\.get\s*\(\s*&DataKey::', code):
         errors.append("ERROR: storage().get() takes a reference. Use .get(&DataKey::...) not .get(DataKey::...)")
 
-    # Check 1b: Storage.set() WITHOUT reference on key
+    # Check 1b: Storage.set() WITHOUT reference on key — direct DataKey::
     if re.search(r'storage\(\)[^;]*\.set\s*\(\s*DataKey::', code) and not re.search(r'storage\(\)[^;]*\.set\s*\(\s*&DataKey::', code):
         errors.append("ERROR: storage().set() takes references. Use .set(&DataKey::..., &value)")
 
-    # Check 1c: Storage.has() WITHOUT reference
+    # Check 1c: Storage.has() WITHOUT reference — direct DataKey::
     if re.search(r'storage\(\)[^;]*\.has\s*\(\s*DataKey::', code) and not re.search(r'storage\(\)[^;]*\.has\s*\(\s*&DataKey::', code):
         errors.append("ERROR: storage().has() takes a reference. Use .has(&DataKey::...)")
+
+    # Check 1d: Storage.get/set/has with variable.clone() — should be &variable
+    if re.search(r'storage\(\)[^;]*\.get\s*\(\s*[a-z_][a-z0-9_]*\.clone\(\)\s*\)', code):
+        errors.append("ERROR: storage().get() takes a reference, NOT .clone(). Use .get(&key) not .get(key.clone())")
+    if re.search(r'storage\(\)[^;]*\.set\s*\(\s*[a-z_][a-z0-9_]*\.clone\(\)\s*,', code):
+        errors.append("ERROR: storage().set() takes a reference key, NOT .clone(). Use .set(&key, &value) not .set(key.clone(), ...)")
+    if re.search(r'storage\(\)[^;]*\.has\s*\(\s*[a-z_][a-z0-9_]*\.clone\(\)\s*\)', code):
+        errors.append("ERROR: storage().has() takes a reference, NOT .clone(). Use .has(&key) not .has(key.clone())")
+
+    # Check 1e: Storage with bare variable (no & and no .clone()) — also wrong
+    for op in ['get', 'set', 'has']:
+        pattern = rf'storage\(\)\s*\.\s*(?:instance|persistent|temporary)\(\)\s*\.{op}\s*\(\s*([a-z_][a-z0-9_]*)\s*[,\)]'
+        for m in re.finditer(pattern, code):
+            var_name = m.group(1)
+            # Skip if it's a method arg like &var already handled
+            context_start = max(0, m.start() - 5)
+            before = code[context_start:m.start(1)]
+            if '&' not in before:
+                errors.append(f"ERROR: storage().{op}() needs & before key variable '{var_name}'. Use .{op}(&{var_name})")
 
     # Check 2: Vec.push() instead of push_back()
     if re.search(r'\.push\s*\([^_]', code) and 'push_back' not in code:
@@ -1593,7 +1920,7 @@ def validate_and_fix_common_issues(code: str) -> tuple[str, list[str]]:
                 code = code[:match.start()] + fixed + code[match.end():]
                 fixes_applied.append(f'Storage.has: added & reference to {key}')
 
-    # Fix 1d: Storage operations with variable keys missing references
+    # Fix 1d: Storage operations with variable keys missing references (bare variable)
     storage_var_get = r'(storage\(\)\s*\.\s*(?:instance|persistent|temporary)\(\)\s*\.\s*get\s*\(\s*)([a-z_][a-z0-9_]*)\s*\)'
     matches = list(re.finditer(storage_var_get, code))
     for match in reversed(matches):
@@ -1606,6 +1933,55 @@ def validate_and_fix_common_issues(code: str) -> tuple[str, list[str]]:
             fixed = f"{prefix}&{var})"
             code = code[:match.start()] + fixed + code[match.end():]
             fixes_applied.append(f'Storage.get: added & reference to variable {var}')
+
+    # Fix 1e: Storage.get() with variable.clone() — should be &variable (no clone needed for storage refs)
+    storage_var_clone_get = r'(storage\(\)\s*\.\s*(?:instance|persistent|temporary)\(\)\s*\.\s*get\s*\(\s*)([a-z_][a-z0-9_]*)\.clone\(\)\s*\)'
+    matches = list(re.finditer(storage_var_clone_get, code))
+    for match in reversed(matches):
+        prefix = match.group(1)
+        var = match.group(2)
+        line_start = code.rfind('\n', 0, match.start()) + 1
+        line = code[line_start:match.end()]
+        if 'storage()' in line and f'&{var}' not in line:
+            fixed = f"{prefix}&{var})"
+            code = code[:match.start()] + fixed + code[match.end():]
+            fixes_applied.append(f'Storage.get: replaced {var}.clone() with &{var}')
+
+    # Fix 1f: Storage.set() with variable.clone() as key — should be &variable
+    storage_var_clone_set = r'(storage\(\)\s*\.\s*(?:instance|persistent|temporary)\(\)\s*\.\s*set\s*\(\s*)([a-z_][a-z0-9_]*)\.clone\(\)\s*,'
+    matches = list(re.finditer(storage_var_clone_set, code))
+    for match in reversed(matches):
+        prefix = match.group(1)
+        var = match.group(2)
+        line_start = code.rfind('\n', 0, match.start()) + 1
+        line = code[line_start:match.end()]
+        if 'storage()' in line and f'&{var}' not in line:
+            fixed = f"{prefix}&{var},"
+            code = code[:match.start()] + fixed + code[match.end():]
+            fixes_applied.append(f'Storage.set: replaced {var}.clone() with &{var}')
+
+    # Fix 1g: Storage.has() with variable.clone() — should be &variable
+    storage_var_clone_has = r'(storage\(\)\s*\.\s*(?:instance|persistent|temporary)\(\)\s*\.\s*has\s*\(\s*)([a-z_][a-z0-9_]*)\.clone\(\)\s*\)'
+    matches = list(re.finditer(storage_var_clone_has, code))
+    for match in reversed(matches):
+        prefix = match.group(1)
+        var = match.group(2)
+        line_start = code.rfind('\n', 0, match.start()) + 1
+        line = code[line_start:match.end()]
+        if 'storage()' in line and f'&{var}' not in line:
+            fixed = f"{prefix}&{var})"
+            code = code[:match.start()] + fixed + code[match.end():]
+            fixes_applied.append(f'Storage.has: replaced {var}.clone() with &{var}')
+
+    # Fix 1h: Storage.get/set/has with DataKey variable (not literal DataKey::) using .clone()
+    storage_dk_clone_get = r'(storage\(\)\s*\.\s*(?:instance|persistent|temporary)\(\)\s*\.\s*get\s*\(\s*)(DataKey::[A-Za-z0-9_]+(?:\([^)]*\))?)\.clone\(\)\s*\)'
+    matches = list(re.finditer(storage_dk_clone_get, code))
+    for match in reversed(matches):
+        prefix = match.group(1)
+        key = match.group(2)
+        fixed = f"{prefix}&{key})"
+        code = code[:match.start()] + fixed + code[match.end():]
+        fixes_applied.append(f'Storage.get: replaced {key}.clone() with &{key}')
 
     # Fix 2: Map operations using references instead of owned values
     lines = code.split('\n')

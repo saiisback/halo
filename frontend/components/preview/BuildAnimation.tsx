@@ -13,7 +13,15 @@ import {
   Check,
   AlertCircle,
   Terminal,
+  Loader2,
 } from 'lucide-react'
+
+// ─── Palette Constants ───────────────────────────────────────────────────────
+// Strict gold / black / gray — no other hues.
+
+const GOLD = 'var(--nb-gold)'
+const GOLD_HEX = '#fdda24'
+const GOLD_GLOW = 'rgba(253, 218, 36, 0.35)'
 
 // ─── Build Step Metadata ─────────────────────────────────────────────────────
 
@@ -22,8 +30,6 @@ interface StepMeta {
   label: string
   subtitle: string
   icon: typeof Brain
-  color: string
-  glow: string
   codeSnippet: string[]
 }
 
@@ -33,8 +39,6 @@ const STEP_META: StepMeta[] = [
     label: 'Analyzing',
     subtitle: 'Understanding your requirements',
     icon: Brain,
-    color: '#6e56cf',
-    glow: 'rgba(110, 86, 207, 0.4)',
     codeSnippet: [
       '// Analyzing DApp requirements...',
       'const spec = await analyze(prompt);',
@@ -55,8 +59,6 @@ const STEP_META: StepMeta[] = [
     label: 'Researching',
     subtitle: 'Fetching Stellar & Soroban docs',
     icon: BookOpen,
-    color: '#3e63dd',
-    glow: 'rgba(62, 99, 221, 0.4)',
     codeSnippet: [
       '// Retrieving Soroban SDK documentation...',
       'const docs = await rag.query({',
@@ -76,8 +78,6 @@ const STEP_META: StepMeta[] = [
     label: 'Writing Contract',
     subtitle: 'Generating Soroban smart contract',
     icon: Code,
-    color: '#05a2c2',
-    glow: 'rgba(5, 162, 194, 0.4)',
     codeSnippet: [
       '#![no_std]',
       'use soroban_sdk::{',
@@ -108,8 +108,6 @@ const STEP_META: StepMeta[] = [
     label: 'Compiling',
     subtitle: 'Building WASM artifact',
     icon: Hammer,
-    color: '#ffb224',
-    glow: 'rgba(255, 178, 36, 0.4)',
     codeSnippet: [
       '$ cargo build --target wasm32-unknown-unknown',
       '   Compiling soroban-sdk v20.3.0',
@@ -131,8 +129,6 @@ const STEP_META: StepMeta[] = [
     label: 'Deploying',
     subtitle: 'Publishing to Stellar Testnet',
     icon: Rocket,
-    color: '#fdda24',
-    glow: 'rgba(253, 218, 36, 0.4)',
     codeSnippet: [
       '$ soroban contract deploy \\',
       '    --wasm contract.optimized.wasm \\',
@@ -153,8 +149,6 @@ const STEP_META: StepMeta[] = [
     label: 'Building UI',
     subtitle: 'Creating React frontend',
     icon: Layout,
-    color: '#30a46c',
-    glow: 'rgba(48, 164, 108, 0.4)',
     codeSnippet: [
       'import { useState } from "react";',
       'import { useContract } from "./hooks";',
@@ -208,7 +202,6 @@ function useTypingEffect(lines: string[], speed: number = 30) {
         })
         setCurrentChar((c) => c + 1)
       } else {
-        // Move to next line
         setDisplayedLines((prev) => {
           const updated = [...prev]
           updated[currentLine] = line
@@ -217,74 +210,74 @@ function useTypingEffect(lines: string[], speed: number = 30) {
         setCurrentLine((l) => l + 1)
         setCurrentChar(0)
       }
-    }, line_is_empty(lines[currentLine]) ? 80 : speed + Math.random() * 20)
+    }, lineIsEmpty(lines[currentLine]) ? 80 : speed + Math.random() * 20)
 
     return () => clearTimeout(timer)
   }, [currentLine, currentChar, lines, speed, isComplete])
 
-  return { displayedLines, isComplete, cursorLine: currentLine, cursorChar: currentChar }
+  return { displayedLines, cursorLine: currentLine }
 }
 
-function line_is_empty(line: string | undefined): boolean {
+function lineIsEmpty(line: string | undefined): boolean {
   return !line || line.trim() === ''
 }
 
-// ─── Syntax Highlighter ──────────────────────────────────────────────────────
+// ─── Syntax Highlighter (gold / gray only) ───────────────────────────────────
 
-function highlightCode(line: string, stepColor: string): React.ReactNode[] {
-  const tokens: React.ReactNode[] = []
-  // Simple keyword-based highlighting
-  const keywords = /\b(use|pub|fn|struct|impl|let|const|mut|async|await|return|import|from|export|default|function|interface|type|if|else|for|match|Ok|Err|Result|Self|self|env|true|false)\b/g
-  const strings = /(["'`])(?:(?!\1).)*\1/g
-  const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/|#!\[.*?\]|#\[.*?\])/gm
-  const numbers = /\b\d+\.?\d*\b/g
-  const symbols = /(\$\s*)/g
-
-  let remaining = line
-  let key = 0
-
-  // Comment lines
-  if (remaining.trimStart().startsWith('//') || remaining.trimStart().startsWith('#')) {
-    return [<span key={0} style={{ color: '#6a737d' }}>{remaining}</span>]
+function highlightCode(line: string): React.ReactNode[] {
+  // Comments → muted gray
+  if (line.trimStart().startsWith('//') || line.trimStart().startsWith('#')) {
+    return [<span key={0} style={{ color: 'var(--muted)' }}>{line}</span>]
   }
 
-  // Terminal lines
-  if (remaining.trimStart().startsWith('$') || remaining.trimStart().startsWith('✓')) {
-    const dollarMatch = remaining.match(/^\$/)
-    if (dollarMatch) {
+  // Terminal lines → gold prompt, foreground text
+  if (line.trimStart().startsWith('$') || line.trimStart().startsWith('✓')) {
+    if (line.match(/^\$/)) {
       return [
-        <span key={0} style={{ color: stepColor }}>{'$ '}</span>,
-        <span key={1} style={{ color: '#e8e8e8' }}>{remaining.slice(2)}</span>,
+        <span key={0} style={{ color: GOLD }}>{'$ '}</span>,
+        <span key={1} style={{ color: 'var(--foreground)' }}>{line.slice(2)}</span>,
       ]
     }
-    return [<span key={0} style={{ color: stepColor }}>{remaining}</span>]
+    return [<span key={0} style={{ color: GOLD }}>{line}</span>]
   }
 
-  // Simple pass - color keywords
-  const parts = remaining.split(/(\b(?:use|pub|fn|struct|impl|let|const|mut|async|await|return|import|from|export|default|function|interface|type|if|else|for|match|Ok|Err|Result)\b|"[^"]*"|'[^']*'|`[^`]*`|\/\/.*$|\b\d+\.?\d*\b|[{}();\[\],<>:=&|!+\-*/.])/g)
+  // Tokenize
+  const parts = line.split(
+    /(\b(?:use|pub|fn|struct|impl|let|const|mut|async|await|return|import|from|export|default|function|interface|type|if|else|for|match|Ok|Err|Result)\b|"[^"]*"|'[^']*'|`[^`]*`|\/\/.*$|\b\d+\.?\d*\b|[{}();\[\],<>:=&|!+\-*/.])/g
+  )
 
-  const keywordSet = new Set(['use', 'pub', 'fn', 'struct', 'impl', 'let', 'const', 'mut', 'async', 'await', 'return', 'import', 'from', 'export', 'default', 'function', 'interface', 'type', 'if', 'else', 'for', 'match', 'Ok', 'Err', 'Result'])
+  const keywordSet = new Set([
+    'use', 'pub', 'fn', 'struct', 'impl', 'let', 'const', 'mut',
+    'async', 'await', 'return', 'import', 'from', 'export', 'default',
+    'function', 'interface', 'type', 'if', 'else', 'for', 'match',
+    'Ok', 'Err', 'Result',
+  ])
 
   return parts.map((part, i) => {
+    // Keywords → gold
     if (keywordSet.has(part)) {
-      return <span key={i} style={{ color: '#c678dd', fontWeight: 500 }}>{part}</span>
+      return <span key={i} style={{ color: GOLD, fontWeight: 500 }}>{part}</span>
     }
+    // Strings → dim gold
     if (part.startsWith('"') || part.startsWith("'") || part.startsWith('`')) {
-      return <span key={i} style={{ color: '#98c379' }}>{part}</span>
+      return <span key={i} style={{ color: 'var(--nb-gold-dim)' }}>{part}</span>
     }
+    // Numbers → foreground
     if (/^\d+\.?\d*$/.test(part)) {
-      return <span key={i} style={{ color: '#d19a66' }}>{part}</span>
+      return <span key={i} style={{ color: 'var(--foreground)' }}>{part}</span>
     }
+    // Punctuation → muted gray
     if (/^[{}();\[\],<>:=&|!+\-*/.]$/.test(part)) {
-      return <span key={i} style={{ color: '#abb2bf' }}>{part}</span>
+      return <span key={i} style={{ color: 'var(--muted)' }}>{part}</span>
     }
-    return <span key={i} style={{ color: '#e8e8e8' }}>{part}</span>
+    // Default → foreground
+    return <span key={i} style={{ color: 'var(--foreground)' }}>{part}</span>
   })
 }
 
 // ─── Particle System ─────────────────────────────────────────────────────────
 
-function FloatingParticles({ color, count = 20 }: { color: string; count?: number }) {
+function FloatingParticles({ count = 18 }: { count?: number }) {
   const particles = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -294,6 +287,7 @@ function FloatingParticles({ color, count = 20 }: { color: string; count?: numbe
       duration: Math.random() * 15 + 10,
       delay: Math.random() * 5,
       opacity: Math.random() * 0.3 + 0.1,
+      isGold: Math.random() > 0.4, // 60% gold, 40% gray
     }))
   }, [count])
 
@@ -308,7 +302,7 @@ function FloatingParticles({ color, count = 20 }: { color: string; count?: numbe
             height: p.size,
             left: `${p.x}%`,
             top: `${p.y}%`,
-            backgroundColor: color,
+            backgroundColor: p.isGold ? GOLD_HEX : 'var(--muted)',
           }}
           animate={{
             y: [0, -30, 10, -20, 0],
@@ -328,42 +322,44 @@ function FloatingParticles({ color, count = 20 }: { color: string; count?: numbe
   )
 }
 
-// ─── Glow Orbs ───────────────────────────────────────────────────────────────
+// ─── Glow Orbs (gold only) ───────────────────────────────────────────────────
 
-function GlowOrbs({ color, glow }: { color: string; glow: string }) {
+function GlowOrbs() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Large gold orb — top-right */}
       <motion.div
-        className="absolute w-[300px] h-[300px] rounded-full blur-[100px]"
-        style={{ backgroundColor: glow, top: '10%', left: '10%' }}
+        className="absolute w-[350px] h-[350px] rounded-full blur-[120px]"
+        style={{ backgroundColor: 'rgba(253, 218, 36, 0.25)', top: '5%', right: '5%' }}
+        animate={{
+          x: [0, -50, 20, -30, 0],
+          y: [0, 30, -20, 25, 0],
+          scale: [1, 1.15, 0.95, 1.1, 1],
+          opacity: [0.2, 0.35, 0.15, 0.3, 0.2],
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      {/* Medium gold orb — bottom-left */}
+      <motion.div
+        className="absolute w-[280px] h-[280px] rounded-full blur-[100px]"
+        style={{ backgroundColor: 'rgba(253, 218, 36, 0.2)', bottom: '10%', left: '10%' }}
         animate={{
           x: [0, 60, -30, 40, 0],
           y: [0, -40, 20, -30, 0],
-          scale: [1, 1.2, 0.9, 1.1, 1],
-          opacity: [0.3, 0.5, 0.25, 0.4, 0.3],
+          scale: [0.9, 1.2, 0.85, 1.1, 0.9],
+          opacity: [0.15, 0.3, 0.12, 0.25, 0.15],
         }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
       />
+      {/* Center gold glow */}
       <motion.div
         className="absolute w-[200px] h-[200px] rounded-full blur-[80px]"
-        style={{ backgroundColor: glow, bottom: '15%', right: '15%' }}
+        style={{ backgroundColor: 'rgba(253, 218, 36, 0.15)', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
         animate={{
-          x: [0, -50, 30, -20, 0],
-          y: [0, 30, -40, 20, 0],
-          scale: [0.8, 1.1, 0.9, 1.2, 0.8],
-          opacity: [0.2, 0.4, 0.2, 0.35, 0.2],
+          scale: [1, 1.3, 0.9, 1.2, 1],
+          opacity: [0.1, 0.2, 0.07, 0.15, 0.1],
         }}
-        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-      />
-      <motion.div
-        className="absolute w-[150px] h-[150px] rounded-full blur-[60px]"
-        style={{ backgroundColor: 'rgba(253, 218, 36, 0.15)', top: '50%', left: '50%' }}
-        animate={{
-          x: [0, 40, -40, 0],
-          y: [0, -30, 30, 0],
-          opacity: [0.15, 0.25, 0.1, 0.15],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 5 }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
       />
     </div>
   )
@@ -371,25 +367,25 @@ function GlowOrbs({ color, glow }: { color: string; glow: string }) {
 
 // ─── Grid Background ─────────────────────────────────────────────────────────
 
-function GridBackground({ color }: { color: string }) {
+function GridBackground() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {/* Perspective grid */}
+      {/* Gold grid lines */}
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage: `
-            linear-gradient(${color} 1px, transparent 1px),
-            linear-gradient(90deg, ${color} 1px, transparent 1px)
+            linear-gradient(${GOLD_HEX} 1px, transparent 1px),
+            linear-gradient(90deg, ${GOLD_HEX} 1px, transparent 1px)
           `,
           backgroundSize: '40px 40px',
         }}
       />
-      {/* Scan line */}
+      {/* Gold scan line */}
       <motion.div
         className="absolute left-0 right-0 h-[1px]"
         style={{
-          background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+          background: `linear-gradient(90deg, transparent, ${GOLD_HEX}, transparent)`,
           opacity: 0.15,
         }}
         animate={{ y: ['-10%', '110%'] }}
@@ -399,9 +395,9 @@ function GridBackground({ color }: { color: string }) {
   )
 }
 
-// ─── Code Rain (Matrix-Style Background) ─────────────────────────────────────
+// ─── Code Rain (gold) ────────────────────────────────────────────────────────
 
-function CodeRain({ color }: { color: string }) {
+function CodeRain() {
   const chars = useMemo(() => {
     const codeChars = '{}[]()<>;:=+->|&!@#$%^*~`/\\01'
     return Array.from({ length: 25 }, (_, i) => ({
@@ -424,7 +420,7 @@ function CodeRain({ color }: { color: string }) {
           className="absolute flex flex-col gap-1"
           style={{
             left: `${col.x}%`,
-            color: color,
+            color: GOLD,
             opacity: col.opacity,
           }}
           animate={{ y: ['-20%', '120%'] }}
@@ -444,44 +440,71 @@ function CodeRain({ color }: { color: string }) {
   )
 }
 
-// ─── Progress Ring ───────────────────────────────────────────────────────────
+// ─── Progress Ring (gold) ────────────────────────────────────────────────────
 
-function ProgressRing({ progress, color, size = 80 }: { progress: number; color: string; size?: number }) {
-  const radius = (size - 8) / 2
-  const circumference = 2 * Math.PI * radius
+function ProgressRing({ progress, size = 76 }: { progress: number; size?: number }) {
+  const outerRadius = (size - 6) / 2
+  const innerRadius = outerRadius - 6
+  const outerCircumference = 2 * Math.PI * outerRadius
+  const innerCircumference = 2 * Math.PI * innerRadius
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        {/* Track */}
+        {/* Outer gold track */}
         <circle
           cx={size / 2}
           cy={size / 2}
-          r={radius}
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={3}
+          r={outerRadius}
+          stroke={GOLD_HEX}
+          strokeWidth={2}
           fill="none"
+          opacity={0.12}
         />
-        {/* Progress */}
+        {/* Outer gold progress */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
-          r={radius}
-          stroke={color}
+          r={outerRadius}
+          stroke={GOLD_HEX}
+          strokeWidth={2}
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={outerCircumference}
+          animate={{ strokeDashoffset: outerCircumference * (1 - Math.min(progress * 1.1, 1)) }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+          opacity={0.5}
+          style={{ filter: `drop-shadow(0 0 4px ${GOLD_GLOW})` }}
+        />
+        {/* Inner gray track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={innerRadius}
+          stroke="var(--border-color)"
+          strokeWidth={3}
+          fill="none"
+        />
+        {/* Inner gold progress */}
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={innerRadius}
+          stroke={GOLD_HEX}
           strokeWidth={3}
           fill="none"
           strokeLinecap="round"
-          strokeDasharray={circumference}
-          animate={{ strokeDashoffset: circumference * (1 - progress) }}
+          strokeDasharray={innerCircumference}
+          animate={{ strokeDashoffset: innerCircumference * (1 - progress) }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+          style={{ filter: `drop-shadow(0 0 6px ${GOLD_GLOW})` }}
         />
       </svg>
       {/* Percentage */}
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.span
           className="text-sm font-mono font-bold"
-          style={{ color }}
+          style={{ color: GOLD }}
           key={Math.round(progress * 100)}
           initial={{ scale: 1.2, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -494,7 +517,7 @@ function ProgressRing({ progress, color, size = 80 }: { progress: number; color:
   )
 }
 
-// ─── Step Indicator ──────────────────────────────────────────────────────────
+// ─── Step Indicator (gold + gray) ────────────────────────────────────────────
 
 function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentIndex: number }) {
   return (
@@ -510,9 +533,9 @@ function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentInde
               className="flex items-center gap-1.5 px-2 py-1 rounded-lg"
               animate={{
                 backgroundColor: isActive
-                  ? `${step.color}15`
+                  ? `${GOLD_HEX}15`
                   : isComplete
-                  ? `${step.color}08`
+                  ? `${GOLD_HEX}08`
                   : 'transparent',
               }}
               transition={{ duration: 0.3 }}
@@ -520,7 +543,7 @@ function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentInde
               <motion.div
                 className="flex items-center justify-center w-5 h-5 rounded-md"
                 animate={{
-                  backgroundColor: isActive ? `${step.color}25` : 'transparent',
+                  backgroundColor: isActive ? `${GOLD_HEX}20` : 'transparent',
                   scale: isActive ? 1 : 0.85,
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
@@ -531,12 +554,12 @@ function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentInde
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                   >
-                    <Check className="w-3 h-3" style={{ color: step.color }} />
+                    <Check className="w-3 h-3" style={{ color: GOLD }} />
                   </motion.div>
                 ) : (
                   <Icon
                     className="w-3 h-3"
-                    style={{ color: isActive ? step.color : 'var(--muted)' }}
+                    style={{ color: isActive ? GOLD : 'var(--muted)' }}
                   />
                 )}
               </motion.div>
@@ -546,7 +569,7 @@ function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentInde
                   animate={{ width: 'auto', opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   className="text-[10px] font-medium whitespace-nowrap overflow-hidden"
-                  style={{ color: step.color }}
+                  style={{ color: GOLD }}
                 >
                   {step.label}
                 </motion.span>
@@ -555,9 +578,8 @@ function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentInde
             {i < steps.length - 1 && (
               <motion.div
                 className="w-4 h-[1px] mx-0.5"
-                animate={{
-                  backgroundColor: i < currentIndex ? step.color : 'rgba(255,255,255,0.08)',
-                }}
+                style={{ backgroundColor: GOLD }}
+                animate={{ opacity: i < currentIndex ? 0.6 : 0.12 }}
                 transition={{ duration: 0.5 }}
               />
             )}
@@ -570,19 +592,10 @@ function StepIndicator({ steps, currentIndex }: { steps: StepMeta[]; currentInde
 
 // ─── Code Editor Window ──────────────────────────────────────────────────────
 
-function CodeEditorWindow({
-  lines,
-  stepColor,
-  stepLabel,
-}: {
-  lines: string[]
-  stepColor: string
-  stepLabel: string
-}) {
-  const { displayedLines, cursorLine, cursorChar } = useTypingEffect(lines, 25)
+function CodeEditorWindow({ lines, stepLabel }: { lines: string[]; stepLabel: string }) {
+  const { displayedLines, cursorLine } = useTypingEffect(lines, 25)
   const editorRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.scrollTop = editorRef.current.scrollHeight
@@ -591,23 +604,40 @@ function CodeEditorWindow({
 
   return (
     <motion.div
-      className="relative rounded-xl overflow-hidden border border-white/[0.06] bg-[#0d0d12]/90 backdrop-blur-xl shadow-2xl"
+      className="relative rounded-xl overflow-hidden border backdrop-blur-xl shadow-2xl"
+      style={{
+        borderColor: 'var(--border-color)',
+        backgroundColor: 'var(--surface)',
+      }}
       initial={{ y: 20, opacity: 0, scale: 0.97 }}
       animate={{ y: 0, opacity: 1, scale: 1 }}
       exit={{ y: -20, opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
     >
+      {/* Gold top accent line */}
+      <motion.div
+        className="h-[2px]"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${GOLD_HEX}, transparent)`,
+        }}
+        animate={{ opacity: [0.4, 0.8, 0.4] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+      />
       {/* Title Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-white/[0.02]">
+      <div
+        className="flex items-center justify-between px-4 py-2.5 border-b"
+        style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--surface-2)' }}
+      >
         <div className="flex items-center gap-2">
+          {/* Gray traffic lights */}
           <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-            <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--muted)', opacity: 0.4 }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--muted)', opacity: 0.3 }} />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'var(--muted)', opacity: 0.2 }} />
           </div>
           <div className="flex items-center gap-1.5 ml-3">
-            <Terminal className="w-3 h-3" style={{ color: stepColor }} />
-            <span className="text-[11px] font-mono" style={{ color: stepColor }}>
+            <Terminal className="w-3 h-3" style={{ color: GOLD }} />
+            <span className="text-[11px] font-mono" style={{ color: GOLD }}>
               {stepLabel}
             </span>
           </div>
@@ -617,8 +647,8 @@ function CodeEditorWindow({
           animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stepColor }} />
-          <span className="text-[10px] text-white/30 font-mono">live</span>
+          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: GOLD_HEX }} />
+          <span className="text-[10px] font-mono" style={{ color: GOLD }}>live</span>
         </motion.div>
       </div>
 
@@ -626,22 +656,22 @@ function CodeEditorWindow({
       <div
         ref={editorRef}
         className="p-4 font-mono text-[12px] leading-[1.7] overflow-y-auto max-h-[300px] min-h-[240px]"
-        style={{ scrollBehavior: 'smooth' }}
+        style={{ scrollBehavior: 'smooth', backgroundColor: 'var(--background)' }}
       >
         {displayedLines.map((line, i) => (
           <div key={i} className="flex">
-            {/* Line number */}
-            <span className="inline-block w-8 text-right mr-4 text-white/15 select-none text-[11px]">
+            <span
+              className="inline-block w-8 text-right mr-4 select-none text-[11px]"
+              style={{ color: 'var(--border-color)' }}
+            >
               {i + 1}
             </span>
-            {/* Code */}
             <span className="flex-1">
-              {highlightCode(line || '', stepColor)}
-              {/* Cursor */}
+              {highlightCode(line || '')}
               {i === cursorLine && (
                 <motion.span
                   className="inline-block w-[2px] h-[14px] ml-[1px] align-middle rounded-full"
-                  style={{ backgroundColor: stepColor }}
+                  style={{ backgroundColor: GOLD_HEX }}
                   animate={{ opacity: [1, 0] }}
                   transition={{ duration: 0.6, repeat: Infinity }}
                 />
@@ -649,13 +679,17 @@ function CodeEditorWindow({
             </span>
           </div>
         ))}
-        {/* Empty lines for spacing */}
         {displayedLines.length === 0 && (
           <div className="flex">
-            <span className="inline-block w-8 text-right mr-4 text-white/15 select-none text-[11px]">1</span>
+            <span
+              className="inline-block w-8 text-right mr-4 select-none text-[11px]"
+              style={{ color: 'var(--border-color)' }}
+            >
+              1
+            </span>
             <motion.span
               className="inline-block w-[2px] h-[14px] rounded-full"
-              style={{ backgroundColor: stepColor }}
+              style={{ backgroundColor: GOLD_HEX }}
               animate={{ opacity: [1, 0] }}
               transition={{ duration: 0.6, repeat: Infinity }}
             />
@@ -663,11 +697,11 @@ function CodeEditorWindow({
         )}
       </div>
 
-      {/* Bottom glow line */}
+      {/* Gold bottom glow line */}
       <motion.div
         className="h-[1px]"
         style={{
-          background: `linear-gradient(90deg, transparent, ${stepColor}, transparent)`,
+          background: `linear-gradient(90deg, transparent, ${GOLD_HEX}, transparent)`,
         }}
         animate={{ opacity: [0.3, 0.7, 0.3] }}
         transition={{ duration: 2, repeat: Infinity }}
@@ -678,31 +712,38 @@ function CodeEditorWindow({
 
 // ─── Build Log Terminal ──────────────────────────────────────────────────────
 
-function BuildLogTerminal({ logs, color }: { logs: string[]; color: string }) {
+function BuildLogTerminal({ logs }: { logs: string[] }) {
   const lastLogs = logs.slice(-3)
 
   return (
     <motion.div
-      className="rounded-lg border border-white/[0.04] bg-black/40 backdrop-blur-sm px-3 py-2 overflow-hidden"
+      className="rounded-lg border px-3 py-2 overflow-hidden backdrop-blur-sm"
+      style={{
+        borderColor: 'var(--border-color)',
+        backgroundColor: 'var(--surface)',
+      }}
       initial={{ y: 10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.3, duration: 0.4 }}
     >
       <div className="flex items-center gap-1.5 mb-1.5">
-        <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color }} />
-        <span className="text-[9px] uppercase tracking-wider text-white/20 font-mono">output</span>
+        <div className="w-1 h-1 rounded-full" style={{ backgroundColor: GOLD_HEX }} />
+        <span className="text-[9px] uppercase tracking-wider font-mono" style={{ color: GOLD, opacity: 0.6 }}>
+          output
+        </span>
       </div>
       <AnimatePresence mode="popLayout">
         {lastLogs.map((log, i) => (
           <motion.p
             key={log + i}
-            className="text-[10px] font-mono text-white/40 truncate"
+            className="text-[10px] font-mono truncate"
+            style={{ color: 'var(--muted)' }}
             initial={{ y: 8, opacity: 0 }}
-            animate={{ y: 0, opacity: i === lastLogs.length - 1 ? 0.6 : 0.25 }}
+            animate={{ y: 0, opacity: i === lastLogs.length - 1 ? 0.8 : 0.4 }}
             exit={{ y: -8, opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <span style={{ color }} className="mr-1.5">›</span>
+            <span style={{ color: GOLD }} className="mr-1.5">›</span>
             {log}
           </motion.p>
         ))}
@@ -723,18 +764,21 @@ export function BuildAnimation() {
   const isError = buildStatus === 'error'
 
   return (
-    <div className="relative flex h-full flex-col items-center justify-center overflow-hidden bg-[#08080c]">
-      {/* Background Layers */}
-      <GridBackground color={isError ? '#e5484d' : currentStep.color} />
-      <CodeRain color={isError ? '#e5484d' : currentStep.color} />
-      <GlowOrbs color={isError ? '#e5484d' : currentStep.color} glow={isError ? 'rgba(229, 72, 77, 0.3)' : currentStep.glow} />
-      <FloatingParticles color={isError ? '#e5484d' : currentStep.color} count={15} />
+    <div
+      className="relative flex h-full flex-col items-center justify-center overflow-hidden"
+      style={{ backgroundColor: 'var(--background)' }}
+    >
+      {/* Background Layers — all gold */}
+      <GridBackground />
+      <CodeRain />
+      <GlowOrbs />
+      <FloatingParticles count={18} />
 
-      {/* Vignette overlay */}
+      {/* Vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at center, transparent 40%, #08080c 100%)',
+          background: 'radial-gradient(ellipse at center, transparent 40%, var(--background) 100%)',
         }}
       />
 
@@ -753,17 +797,22 @@ export function BuildAnimation() {
 
         {/* Progress Ring + Step Label */}
         <div className="flex items-center gap-5">
-          <ProgressRing
-            progress={progress}
-            color={isError ? '#e5484d' : currentStep.color}
-            size={72}
-          />
+          <ProgressRing progress={progress} size={76} />
           <div>
+            {/* Brand tag */}
+            <motion.span
+              className="text-[9px] uppercase tracking-[0.2em] font-semibold font-mono mb-1 block"
+              style={{ color: GOLD }}
+              animate={{ opacity: [0.5, 0.9, 0.5] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              halo build
+            </motion.span>
             <AnimatePresence mode="wait">
               <motion.h2
                 key={currentStep.id}
                 className="text-lg font-semibold tracking-tight"
-                style={{ color: isError ? '#e5484d' : currentStep.color }}
+                style={{ color: isError ? 'var(--foreground)' : GOLD }}
                 initial={{ y: 10, opacity: 0, filter: 'blur(4px)' }}
                 animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
                 exit={{ y: -10, opacity: 0, filter: 'blur(4px)' }}
@@ -775,7 +824,8 @@ export function BuildAnimation() {
             <AnimatePresence mode="wait">
               <motion.p
                 key={currentStep.id + '-sub'}
-                className="text-xs text-white/40 mt-0.5"
+                className="text-xs mt-0.5"
+                style={{ color: 'var(--muted)' }}
                 initial={{ y: 5, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -5, opacity: 0 }}
@@ -793,7 +843,6 @@ export function BuildAnimation() {
             <CodeEditorWindow
               key={currentStep.id}
               lines={currentStep.codeSnippet}
-              stepColor={currentStep.color}
               stepLabel={currentStep.label}
             />
           </AnimatePresence>
@@ -802,28 +851,43 @@ export function BuildAnimation() {
         {/* Error Display */}
         {isError && error && (
           <motion.div
-            className="w-full rounded-xl border border-red-500/20 bg-red-500/5 backdrop-blur-xl p-4"
+            className="w-full rounded-xl border backdrop-blur-xl p-4"
+            style={{
+              borderColor: 'var(--muted)',
+              backgroundColor: 'var(--surface)',
+            }}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
           >
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-4 h-4 text-red-400" />
-              <span className="text-sm font-medium text-red-400">Error Details</span>
+              <AlertCircle className="w-4 h-4" style={{ color: 'var(--foreground)' }} />
+              <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>Error Details</span>
             </div>
-            <p className="text-xs font-mono text-red-300/70">{error}</p>
+            <p className="text-xs font-mono" style={{ color: 'var(--muted)' }}>{error}</p>
           </motion.div>
         )}
 
         {/* Build Logs */}
         {buildLogs.length > 0 && !isError && (
           <div className="w-full">
-            <BuildLogTerminal logs={buildLogs} color={currentStep.color} />
+            <BuildLogTerminal logs={buildLogs} />
           </div>
         )}
       </div>
 
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#08080c] to-transparent pointer-events-none" />
+      <div
+        className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, var(--background) 30%, transparent)' }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-[1px] pointer-events-none"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${GOLD_HEX}, transparent)`,
+        }}
+        animate={{ opacity: [0.08, 0.2, 0.08] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+      />
     </div>
   )
 }

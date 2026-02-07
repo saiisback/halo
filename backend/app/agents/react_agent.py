@@ -14,6 +14,7 @@ import logging
 from typing import TypedDict
 
 from app.core.llm import generate_completion
+from app.core.memory import get_memory
 from app.templates import get_frontend_template, get_frontend_components
 
 # Configure logging
@@ -482,6 +483,13 @@ async def llm_generate_app(
         functions_detail=functions_detail,
         ui_requirements=", ".join(spec.get("ui_requirements", [])) or "Standard DApp interface",
     )
+
+    # Inject lessons learned from memory
+    memory = get_memory()
+    lessons = memory.get_lessons_learned()
+    if lessons:
+        user_prompt = lessons + "\n\n" + user_prompt
+        logger.info(f"[REACT_AGENT] Injected lessons learned ({len(lessons)} chars)")
 
     logger.info(f"[REACT_AGENT] User prompt length: {len(user_prompt)} chars")
 

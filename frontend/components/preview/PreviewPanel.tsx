@@ -227,8 +227,6 @@ function ToolbarButton({
 }
 
 function EmptyState() {
-  const { loadTestFiles } = useHaloStore()
-
   return (
     <div className="flex h-full flex-col items-center justify-center text-center bg-[var(--surface)] bg-mesh-subtle">
       <div className="rounded-2xl border border-nb-gold/20 p-6 mb-5 bg-nb-gold/5 glow-gold">
@@ -239,7 +237,6 @@ function EmptyState() {
         Describe your DApp in the chat and I&apos;ll generate a live preview here.
         Your app will be deployed to Stellar Testnet.
       </p>
-      
     </div>
   )
 }

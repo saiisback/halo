@@ -4,8 +4,8 @@ uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 sse-starlette==2.0.0
 
-# OpenAI GPT-5 via GitHub Models
-openai>=1.0.0
+# Anthropic Claude API
+anthropic>=0.43.0
 
 # LangChain & LangGraph
 langchain==0.1.5

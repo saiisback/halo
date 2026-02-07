@@ -163,7 +163,7 @@ class TestConfig:
         
         assert settings.app_name == "Halo"
         assert settings.stellar_network == "testnet"
-        assert settings.openai_model == "openai/gpt-5"
+        assert settings.claude_model == "claude-sonnet-4-5-20250929"
 
 
 # Integration test (requires running services)

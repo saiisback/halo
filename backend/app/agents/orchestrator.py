@@ -22,6 +22,7 @@ from app.services.compiler import compile_contract
 from app.services.deployer import deploy_contract
 from app.rag.retriever import retrieve_docs
 from app.core.config import settings
+from app.core.memory import get_memory
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -284,6 +285,20 @@ async def compile_node(state: PipelineState) -> PipelineState:
 
         if result["success"]:
             state["wasm_binary"] = result["wasm"]
+
+            # If this was a retry, record the error→fix mapping
+            previous_error = state.get("error")
+            if previous_error and state.get("compile_retry_count", 0) > 0:
+                try:
+                    memory = get_memory()
+                    memory.record_error(
+                        previous_error,
+                        state.get("rust_code", ""),
+                        state.get("rust_code", ""),
+                    )
+                except Exception as mem_err:
+                    logger.warning(f"[ORCHESTRATOR] Memory error→fix record failed: {mem_err}")
+
             state["error"] = None  # Clear any previous error
             logger.info(f"[ORCHESTRATOR] WASM binary size: {len(result['wasm'])} bytes")
             state["events"].append({
@@ -304,6 +319,14 @@ async def compile_node(state: PipelineState) -> PipelineState:
             full_error = "\n\n".join(error_parts) if error_parts else "Compilation failed"
             state["error"] = full_error
             logger.error(f"[ORCHESTRATOR] Compilation error: {full_error[:500]}")
+
+            # Record error in memory for future learning
+            try:
+                memory = get_memory()
+                memory.record_error(full_error, state.get("rust_code", ""))
+            except Exception as mem_err:
+                logger.warning(f"[ORCHESTRATOR] Memory record_error failed: {mem_err}")
+
             state["events"].append({
                 "step": "compiling",
                 "message": f"Compilation error: {result.get('error', 'failed')[:200]}"
@@ -401,10 +424,23 @@ async def deploy_node(state: PipelineState) -> PipelineState:
         if result["success"]:
             state["contract_id"] = result["contract_id"]
             state["deployment_error"] = None
-            
+
             logger.info(f"[ORCHESTRATOR] DEPLOYMENT SUCCESSFUL!")
             logger.info(f"[ORCHESTRATOR] Contract ID: {result['contract_id']}")
-            
+
+            # Record success in memory
+            try:
+                memory = get_memory()
+                attempts = state.get("compile_retry_count", 0) + 1
+                memory.record_success(
+                    template_type=state.get("template_type", "custom"),
+                    spec=state.get("contract_spec", {}),
+                    code=state.get("rust_code", ""),
+                    attempts=attempts,
+                )
+            except Exception as mem_err:
+                logger.warning(f"[ORCHESTRATOR] Memory record_success failed: {mem_err}")
+
             state["events"].append({
                 "step": "deployed",
                 "message": "Contract deployed successfully!",

@@ -12,10 +12,9 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = False
 
-    # OpenAI GPT-5 via GitHub Models (Azure AI Inference)
-    github_token: str = ""
-    openai_model: str = "openai/gpt-5"
-    openai_endpoint: str = "https://models.github.ai/inference"
+    # Anthropic Claude API
+    anthropic_api_key: str = ""
+    claude_model: str = "claude-sonnet-4-5-20250929"
 
     # Embeddings (sentence-transformers, local)
     embedding_model: str = "all-MiniLM-L6-v2"

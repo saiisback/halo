@@ -143,6 +143,15 @@ const borrowCall = pool.call(
 );
 ```
 
+Soroban contract patterns for lending/borrowing:
+```rust
+// CRITICAL: Storage always uses & references for keys
+let position_key = DataKey::Position(user.clone());
+env.storage().instance().set(&position_key, &position);
+let pos: Position = env.storage().instance().get(&position_key).unwrap();
+// Track collateral and debt with i128 amounts
+```
+
 UI components to add: Supply/borrow forms, position overview dashboard, interest rate display, health factor indicator, market overview table with TVL and rates.""",
     },
     {
@@ -180,6 +189,15 @@ const swapCall = pool.call(
   nativeToScVal(askAssetMinAmount, { type: 'i128' }),
   nativeToScVal(maxSpread, { type: 'i64' })
 );
+```
+
+Soroban contract patterns for staking integration:
+```rust
+// CRITICAL: Storage always uses & references, NEVER .clone()
+let stake_key = DataKey::StakeInfo(user.clone());
+env.storage().instance().set(&stake_key, &info);          // CORRECT: &stake_key
+let info: StakeInfo = env.storage().instance().get(&stake_key).unwrap(); // CORRECT: &stake_key
+// WRONG: env.storage().instance().get(stake_key.clone())  // This causes compilation error!
 ```
 
 UI components to add: Multi-hop swap interface, pool explorer, stake/unstake forms, rewards dashboard, portfolio overview.""",

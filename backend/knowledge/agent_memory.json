@@ -1,0 +1,45 @@
+{
+  "error_fixes": [
+    {
+      "error_pattern": "error[E0308]: mismatched types",
+      "fix_description": "",
+      "occurrences": 3,
+      "last_seen": "2026-02-07T20:45:10.888123+00:00"
+    },
+    {
+      "error_pattern": "|         ---------------------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `u64`, found `u32`",
+      "fix_description": "",
+      "occurrences": 1,
+      "last_seen": "2026-02-07T20:39:18.968722+00:00"
+    }
+  ],
+  "successful_patterns": {
+    "game_e10cca562f7e": {
+      "spec_summary": "An on-chain coin flip game where players bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Bet {\n    pub player: Address,\n    pub choice: bool,\n    pub amount: i128,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Bet(u64),\n    NextBetId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n   ",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T20:09:01.667736+00:00"
+    },
+    "marketplace_74b4bb3cd4c3": {
+      "spec_summary": "A marketplace where users can list NFTs for sale and buy listed NFTs",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Listing {\n    pub seller: Address,\n    pub nft_contract: Address,\n    pub token_id: u64,\n    pub price: i128,\n    pub payment_token: Address,\n    pub active: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    Admin,\n    FeePercent,\n    Listing(u64),\n    NextListingId,\n}\n\n#[contract]\npub struct NFTMarketplace;\n\n#[contractimpl]\nimpl NFTMarketpl",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T20:25:13.893867+00:00"
+    },
+    "custom_5ae5cdd080e6": {
+      "spec_summary": "A staking contract that tracks user stakes and reward history with Phoenix Protocol integration",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct StakeInfo {\n    pub amount: i128,\n    pub rewards: i128,\n    pub last_update: u64,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    Admin,\n    RewardRate,\n    StakeInfo(Address),\n    TotalStaked,\n}\n\n#[contract]\npub struct StakingDashboard;\n\n#[contractimpl]\nimpl StakingDashboard {\n    pub fn initialize(env: Env, admin: Address, reward_rate: u64) {\n      ",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T20:55:52.174279+00:00"
+    }
+  },
+  "generation_stats": {
+    "total_generations": 3,
+    "first_attempt_success": 3,
+    "required_retries": 4,
+    "common_errors": [
+      "error[E0308]: mismatched types",
+      "|         ---------------------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `u64`, found `u32`"
+    ]
+  }
+}

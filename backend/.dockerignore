@@ -1,0 +1,8 @@
+builds/
+knowledge/
+.venv/
+__pycache__/
+*.pyc
+.env
+.git
+.pytest_cache/

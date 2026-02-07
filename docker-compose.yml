@@ -29,9 +29,8 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://halo:halo@postgres:5432/halo
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - OPENAI_MODEL=${OPENAI_MODEL:-openai/gpt-5}
-      - OPENAI_ENDPOINT=${OPENAI_ENDPOINT:-https://models.github.ai/inference}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-4-5-20250929}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
       - STELLAR_NETWORK=testnet
       - STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org

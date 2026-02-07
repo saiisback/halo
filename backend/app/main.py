@@ -43,7 +43,7 @@ async def health():
     """Detailed health check"""
     return {
         "status": "healthy",
-        "llm": "openai",
-        "model": settings.openai_model,
+        "llm": "claude",
+        "model": settings.claude_model,
         "stellar_network": settings.stellar_network,
     }
