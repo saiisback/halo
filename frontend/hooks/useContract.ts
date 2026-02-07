@@ -9,7 +9,6 @@ import { CONTRACT_ID, SOROBAN_RPC_URL, STELLAR_NETWORK } from '../lib/stellar';
 const { Contract, TransactionBuilder, Networks, Address, nativeToScVal, scValToNative, xdr } = Stellar;
 // Handle both old (v11 SorobanRpc) and new (v12+ rpc) SDK namespaces
 const SorobanRpc = Stellar.rpc || Stellar.SorobanRpc;
-console.log('[useContract] SDK loaded, rpc namespace:', SorobanRpc ? 'found' : 'MISSING');
 
 const PASSPHRASE = STELLAR_NETWORK === 'testnet'
   ? Networks.TESTNET
@@ -30,18 +29,11 @@ function sorobanString(val) { return { __soroban_type: 'string', value: val }; }
 function sorobanBool(val) { return { __soroban_type: 'bool', value: val }; }
 function sorobanSymbol(val) { return { __soroban_type: 'symbol', value: val }; }
 
-// #region agent log
-function _dbg(loc, msg, data, hId) { try { var p = {location:loc,message:msg,data:data,timestamp:Date.now(),hypothesisId:hId}; var s = JSON.stringify(p); console.warn('[DBG]', s); try{window.top.postMessage({type:'__dbg_log',payload:p},'*')}catch(e2){try{window.parent.postMessage({type:'__dbg_log',payload:p},'*')}catch(e3){}} } catch(e){ console.warn('[DBG-ERR]', loc, msg, e.message); } }
-// #endregion
-
 /**
  * Convert a JS value to a Soroban ScVal.
  * Handles typed wrappers (u64, i128, etc.) and uses smart heuristics for unwrapped values.
  */
 function toScVal(value) {
-  // #region agent log
-  _dbg('toScVal','entry',{valueType:typeof value,isSymbol:typeof value==='symbol',repr:typeof value==='symbol'?('SYM:'+String(value.description)):(typeof value==='object'?(value?(value.__soroban_type||'obj:'+Object.keys(value).join(',')):'null'):String(value).substring(0,100))},'H1');
-  // #endregion
   if (value === null || value === undefined) {
     return xdr.ScVal.scvVoid();
   }
@@ -103,9 +95,6 @@ function toScVal(value) {
     return xdr.ScVal.scvVec(value.map(toScVal));
   }
   // Fallback — graceful: try nativeToScVal, fall back to string conversion
-  // #region agent log
-  _dbg('toScVal','FALLBACK-HIT',{valueType:typeof value,ctorName:value&&value.constructor?value.constructor.name:'N/A'},'H1');
-  // #endregion
   try {
     return nativeToScVal(value);
   } catch (e) {
@@ -204,10 +193,6 @@ export function useContract(contractId = CONTRACT_ID) {
 
       // ── Live mode: real Soroban transaction ──
       console.log('%c[Live] invoke:', 'color: #4ade80', method, args);
-      // #region agent log
-      var _ai = {}; try{Object.keys(args).forEach(function(k){var v=args[k]; _ai[k]={type:typeof v,isSymbol:typeof v==='symbol',repr:typeof v==='symbol'?('SYM:'+String(v.description)):(typeof v==='object'?(v?JSON.stringify(v).substring(0,100):'null'):String(v).substring(0,80))};})}catch(ex){_ai._err=ex.message;}
-      _dbg('invoke','called',{method:method,argKeys:Object.keys(args),argDetails:_ai},'H5');
-      // #endregion
 
       const server = new SorobanRpc.Server(SOROBAN_RPC_URL);
       const account = await server.getAccount(publicKey);
@@ -275,10 +260,7 @@ export function useContract(contractId = CONTRACT_ID) {
 
       throw new Error('Transaction ' + (result ? result.status : 'timed out'));
     } catch (err) {
-      // #region agent log
-      _dbg('invoke','ERROR',{method:method,errMsg:err.message,errName:err.name,errStack:err.stack?err.stack.substring(0,500):'none'},'H4');
-      console.error('[useContract] invoke FAILED — method:', method, '| error:', err.message, '| args:', JSON.stringify(Object.keys(args)), '| stack:', err.stack);
-      // #endregion
+      console.error('[useContract] invoke error:', err);
       setError(err.message || 'Transaction failed');
       setTxStatus('failed');
       setLoading(false);
