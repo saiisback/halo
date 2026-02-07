@@ -2,7 +2,7 @@
 RAG Retriever - Query ChromaDB for relevant Stellar documentation
 
 Retrieves relevant documentation chunks to provide context for code generation.
-Uses Context7 as the primary documentation source, with static fallback docs as backup.
+Uses ChromaDB vector search supplemented with curated fallback docs.
 """
 
 import chromadb
@@ -22,12 +22,6 @@ COLLECTIONS = {
     "soroban-sdk": "soroban_sdk_docs",
     "stellar-sdk-js": "stellar_js_sdk_docs",
     "soroban-examples": "soroban_examples_docs",
-}
-
-# Mapping from doc_type to Context7 library names to try
-CONTEXT7_LIBRARY_MAP = {
-    "soroban-sdk": ["stellar/soroban-sdk", "stellar/rs-soroban-sdk"],
-    "stellar-sdk-js": ["stellar/js-stellar-sdk"],
 }
 
 # Global ChromaDB client
@@ -50,45 +44,6 @@ def get_chroma_client() -> chromadb.PersistentClient:
     return _chroma_client
 
 
-async def retrieve_context7_docs(query: str, doc_type: str) -> list[str]:
-    """
-    Fetch supplementary docs from Context7 for a given doc type.
-
-    Returns a list of documentation strings, or an empty list on failure.
-    This is non-fatal — errors are logged and silently ignored.
-    """
-    library_names = CONTEXT7_LIBRARY_MAP.get(doc_type)
-    if not library_names:
-        return []
-
-    try:
-        from app.services.context7 import search_library, get_library_docs
-    except ImportError:
-        logger.debug("Context7 service not available")
-        return []
-
-    docs: list[str] = []
-    for lib_name in library_names:
-        try:
-            libraries = await search_library(lib_name)
-            if not libraries:
-                continue
-
-            # Use the first matching library
-            lib = libraries[0]
-            lib_id = lib.get("id") or lib.get("library_id") or lib_name
-
-            content = await get_library_docs(str(lib_id), topic=query)
-            if content and content.strip():
-                docs.append(content.strip())
-                break  # Got docs from one library, no need to try alternatives
-        except Exception as e:
-            logger.debug(f"Context7 lookup failed for {lib_name}: {e}")
-            continue
-
-    return docs
-
-
 async def retrieve_docs(
     query: str,
     doc_type: str = "soroban-sdk",
@@ -97,8 +52,8 @@ async def retrieve_docs(
     """
     Retrieve relevant documentation chunks for a query.
     
-    IMPORTANT: For smart contract generation, we ALWAYS include the high-quality
-    fallback docs first, then supplement with RAG results if relevant.
+    Always includes curated fallback docs first, then supplements
+    with ChromaDB RAG results if relevant.
     
     Args:
         query: Search query (user prompt or specific question)
@@ -112,19 +67,7 @@ async def retrieve_docs(
     top_k = top_k or settings.rag_top_k
     collection_name = COLLECTIONS.get(doc_type, COLLECTIONS["soroban-sdk"])
     
-    # Context7 is the primary documentation source
-    base_docs = []
-    try:
-        c7_docs = await retrieve_context7_docs(query, doc_type)
-        if c7_docs:
-            logger.info(f"Context7 returned {len(c7_docs)} doc(s) for {doc_type}")
-            base_docs = c7_docs
-    except Exception as e:
-        logger.debug(f"Context7 retrieval failed: {e}")
-
-    # Fall back to static docs only if Context7 returned nothing
-    if not base_docs:
-        base_docs = get_fallback_docs(doc_type)
+    base_docs = get_fallback_docs(doc_type)
 
     try:
         client = get_chroma_client()

@@ -37,7 +37,6 @@ services:
       - STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
       - STELLAR_SOROBAN_RPC_URL=https://soroban-testnet.stellar.org
       - DOCKER_TIMEOUT_SECONDS=300
-      - CONTEXT7_API_KEY=${CONTEXT7_API_KEY}
       # Build directory paths for Docker-in-Docker volume mounting
       - BUILD_DIR=/app/builds
       - HOST_BUILD_DIR=${PWD}/backend/builds

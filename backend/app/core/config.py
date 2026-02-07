@@ -15,7 +15,6 @@ class Settings(BaseSettings):
     # OpenAI GPT-5 via GitHub Models (Azure AI Inference)
     github_token: str = ""
     openai_model: str = "openai/gpt-5"
-    openai_fallback_model: str = "openai/gpt-4.1"  # Used when primary model rejects large prompts (413)
     openai_endpoint: str = "https://models.github.ai/inference"
 
     # Embeddings (sentence-transformers, local)

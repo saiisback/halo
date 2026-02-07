@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-## Documentation is now fetched via Context7 and passed through the pipeline as docs_context.
+## Documentation is fetched via RAG and passed through the pipeline as docs_context.
 
 
 class ReactGenerationResult(TypedDict):
@@ -33,252 +33,27 @@ class ReactGenerationError(Exception):
     pass
 
 
-REACT_AGENT_SYSTEM_PROMPT = """You are a React frontend expert. You generate COMPLETE, WORKING App.jsx files for Stellar DApps.
+REACT_AGENT_SYSTEM_PROMPT = """You generate COMPLETE App.jsx for Stellar DApps. Output ONLY JSX code, no markdown.
 
-## ABSOLUTE RULES:
-1. Output ONLY valid JSX code — no markdown, no explanation, no code fences
-2. ALL braces, parentheses, brackets MUST be balanced
-3. MUST have `export default function App()`
-4. MUST import useState from 'react' and useContract from './hooks/useContract'
-5. MUST import './index.css' for styling
-6. Do NOT truncate — output the COMPLETE component from first import to final closing brace
-7. For any field representing a deadline, timestamp, or date: use `<input type="datetime-local">` (NOT `type="number"`).
-   Set a default value via `new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 16)` (30 days from now).
-   Convert to Unix timestamp (seconds) before passing to `invoke()`: `Math.floor(new Date(value).getTime() / 1000)`.
-8. Keep it SIMPLE — one card per action, max 3-4 cards total
-9. Every handler function must call `getPublicKey()` first for wallet address
-
-## useContract HOOK API (import from './hooks/useContract'):
-```js
-const { invoke, query, loading, error, txStatus, checkWallet, getPublicKey, u64, i128 } = useContract();
-// invoke(methodName, argsObject) — calls contract method that changes state, returns { success: true }
-// query(methodName, argsObject) — read-only call, returns { value: '...' } or { success: true }
-// loading — boolean, true during any call
-// error — string or null
-// txStatus — 'preparing' | 'signing' | 'submitting' | 'confirmed' | 'failed' | null
-// checkWallet() — returns true if Freighter connected
-// getPublicKey() — returns wallet address string
-//
-// TYPE HELPERS (CRITICAL — use these to avoid type mismatch errors!):
-// u64(value)  — wraps value as u64 (for IDs, counts, timestamps, durations)
-// i128(value) — wraps value as i128 (for token amounts, prices, balances)
-//
-// RULE: Address params → just pass the string (auto-detected from G.../C... format)
-// RULE: u64 params (IDs, counts, timestamps) → wrap with u64()
-// RULE: i128 params (amounts, prices) → wrap with i128()
-// RULE: String params → just pass the string (auto-detected)
-// RULE: bool params → just pass true/false
-```
-
-## AVAILABLE CSS CLASSES (from index.css — use className, not inline styles):
-- `.container` — max-width centered layout
-- `.card` — glassmorphism card with dark bg, blur, border
-- `.card-header` — card title styling
-- `.btn` — gradient button (blue→purple), full width
-- `.btn:disabled` — gray disabled state
-- `.btn-secondary` — subtle outline button
-- `.input` — dark input field with border
-- `.label` — form label
-- `.status.success` / `.status.error` / `.status.loading` — status badges
-- `.text-muted` — gray text
-- `.text-small` — smaller font
-- `.mb-1` `.mb-2` `.mb-3` `.mt-1` `.mt-2` — spacing utilities
-- `.spinner` — CSS loading spinner
-
-## WORKING EXAMPLE — NFT Minting DApp (follow this exact pattern):
-```jsx
-import { useState } from 'react';
-import { useContract } from './hooks/useContract';
-import './index.css';
-
-export default function App() {
-  const { invoke, query, loading, error, txStatus, getPublicKey, u64, i128 } = useContract();
-  const [name, setName] = useState('');
-  const [uri, setUri] = useState('');
-  const [tokenId, setTokenId] = useState('');
-  const [nftInfo, setNftInfo] = useState(null);
-  const [result, setResult] = useState(null);
-
-  const handleInitialize = async () => {
-    const pubKey = await getPublicKey();
-    if (!pubKey) return;
-    const res = await invoke('initialize', { admin: pubKey });
-    if (res) setResult('Contract initialized!');
-  };
-
-  const handleMint = async () => {
-    const pubKey = await getPublicKey();
-    if (!pubKey) return;
-    const res = await invoke('mint', { to: pubKey, name: name, uri: uri });
-    if (res) setResult('NFT minted successfully!');
-  };
-
-  const handleLookup = async () => {
-    const res = await query('get_nft', { id: u64(tokenId) });
-    if (res && res.value) setNftInfo(res.value);
-  };
-
-  return (
-    <div className="container">
-      <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>NFT Minting</h1>
-      <p className="text-muted mb-3">Mint and manage NFTs on Stellar</p>
-
-      <div className="card">
-        <div className="card-header">Initialize</div>
-        <button className="btn btn-secondary" onClick={handleInitialize} disabled={loading}>
-          {loading ? 'Initializing...' : 'Initialize Contract'}
-        </button>
-      </div>
-
-      <div className="card">
-        <div className="card-header">Mint NFT</div>
-        <label className="label">Name</label>
-        <input className="input" placeholder="My NFT" value={name} onChange={e => setName(e.target.value)} />
-        <label className="label">URI / Image URL</label>
-        <input className="input" placeholder="https://..." value={uri} onChange={e => setUri(e.target.value)} />
-        <button className="btn" onClick={handleMint} disabled={loading}>
-          {loading ? <><span className="spinner" /> Minting...</> : 'Mint NFT'}
-        </button>
-        {error && <div className="status error mt-2">{error}</div>}
-        {txStatus === 'confirmed' && <div className="status success mt-2">Transaction confirmed!</div>}
-        {result && <div className="status success mt-2">{result}</div>}
-      </div>
-
-      <div className="card">
-        <div className="card-header">Lookup NFT</div>
-        <label className="label">Token ID</label>
-        <input className="input" type="number" placeholder="1" value={tokenId} onChange={e => setTokenId(e.target.value)} />
-        <button className="btn btn-secondary" onClick={handleLookup} disabled={loading}>
-          {loading ? 'Loading...' : 'Look Up'}
-        </button>
-        {nftInfo && <div className="text-small mt-2">Owner: {JSON.stringify(nftInfo)}</div>}
-      </div>
-    </div>
-  );
-}
-```
-
-## WORKING EXAMPLE — Token Vault DApp:
-```jsx
-import { useState } from 'react';
-import { useContract } from './hooks/useContract';
-import './index.css';
-
-export default function App() {
-  const { invoke, query, loading, error, txStatus, getPublicKey, i128 } = useContract();
-  const [amount, setAmount] = useState('');
-  const [balance, setBalance] = useState(null);
-  const [result, setResult] = useState(null);
-
-  const handleDeposit = async () => {
-    const pubKey = await getPublicKey();
-    if (!pubKey) return;
-    const res = await invoke('deposit', { from: pubKey, amount: i128(amount) });
-    if (res) { setResult('Deposit successful!'); setAmount(''); }
-  };
-
-  const handleWithdraw = async () => {
-    const pubKey = await getPublicKey();
-    if (!pubKey) return;
-    const res = await invoke('withdraw', { to: pubKey, amount: i128(amount) });
-    if (res) { setResult('Withdrawal successful!'); setAmount(''); }
-  };
-
-  const handleGetBalance = async () => {
-    const pubKey = await getPublicKey();
-    if (!pubKey) return;
-    const res = await query('get_balance', { user: pubKey });
-    if (res) setBalance(res.value);
-  };
-
-  return (
-    <div className="container">
-      <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Token Vault</h1>
-      <p className="text-muted mb-3">Deposit and withdraw tokens securely</p>
-
-      <div className="card">
-        <div className="card-header">Deposit / Withdraw</div>
-        <label className="label">Amount</label>
-        <input className="input" type="number" placeholder="100" value={amount} onChange={e => setAmount(e.target.value)} />
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn" onClick={handleDeposit} disabled={loading} style={{ flex: 1 }}>
-            {loading ? <><span className="spinner" /> Processing...</> : 'Deposit'}
-          </button>
-          <button className="btn btn-secondary" onClick={handleWithdraw} disabled={loading} style={{ flex: 1 }}>
-            Withdraw
-          </button>
-        </div>
-        {error && <div className="status error mt-2">{error}</div>}
-        {txStatus === 'confirmed' && <div className="status success mt-2">Transaction confirmed!</div>}
-        {result && <div className="status success mt-2">{result}</div>}
-      </div>
-
-      <div className="card">
-        <div className="card-header">Balance</div>
-        <button className="btn btn-secondary" onClick={handleGetBalance} disabled={loading}>Check Balance</button>
-        {balance !== null && <div className="text-small mt-2">Your balance: {balance}</div>}
-      </div>
-    </div>
-  );
-}
-```
-
-## CRITICAL TYPE RULES for invoke/query arguments:
-- Address params (from, to, admin, voter, creator, etc.) → just pass the pubKey string directly
-- u64 params (IDs like proposal_id, campaign_id, token_id, also counts, timestamps, durations) → wrap with u64()
-- i128 params (amounts like amount, price, goal, balance) → wrap with i128()
-- String params (name, title, uri, description) → just pass the string directly
-- bool params (approve, active) → just pass true/false
-- ALWAYS destructure u64 and i128 from useContract: `const { invoke, query, ..., u64, i128 } = useContract();`
-- ONLY pass arguments that match the contract function signature — do NOT add extra args
-
-Generate code that follows these EXACT patterns. Keep it simple: 2-4 cards, clear handlers, balanced braces."""
+RULES:
+- `export default function App()` with `import { useState } from 'react'`, `import { useContract } from './hooks/useContract'`, `import './index.css'`
+- Destructure: `const { invoke, query, loading, error, txStatus, getPublicKey, u64, i128 } = useContract();`
+- invoke('method', {args}) for writes, query('method', {args}) for reads
+- Every handler: `const pubKey = await getPublicKey(); if (!pubKey) return;`
+- Type wrapping: Address→string, u64 params→u64(), i128 params→i128(), String→string, bool→true/false
+- CSS classes: container, card, card-header, btn, btn-secondary, input, label, status success/error, text-muted, spinner
+- Dates: use `<input type="datetime-local">`, convert with `Math.floor(new Date(val).getTime()/1000)`
+- Keep simple: 2-4 cards, balanced braces, complete code from first import to final `}`"""
 
 
-REACT_AGENT_USER_PROMPT = """Create App.jsx for this DApp. Follow the EXACT pattern from the system prompt examples.
+REACT_AGENT_USER_PROMPT = """Create App.jsx for: {name} — {description}
 
-## Contract: {name}
-## Description: {description}
-## Contract ID: {contract_id}
-
-## CONTRACT FUNCTION SIGNATURES (AUTHORITATIVE — use ONLY these):
+CONTRACT FUNCTIONS (use ONLY these, param count must be exact):
 {functions_detail}
 
-CRITICAL: The parameter count above is EXACT. Passing more or fewer params causes MismatchingParameterLen errors.
-- env: Env is implicit — NEVER pass it from the frontend
-- ONLY pass the parameters listed above — do NOT add extra parameters
-- Do NOT guess or infer additional parameters not listed above
+UI: {ui_requirements}
 
-## Full contract source (for reference only — use signatures above for invoke/query calls):
-{rust_code}
-{docs_context_section}
-
-## UI Requirements: {ui_requirements}
-
-## MANDATORY RULES:
-- Start with `import {{ useState }} from 'react';`
-- Import useContract from './hooks/useContract' and './index.css'
-- `export default function App()` — named export
-- Destructure BOTH type helpers AND hook methods: `const {{ invoke, query, loading, error, txStatus, getPublicKey, u64, i128 }} = useContract();`
-- Use `invoke('function_name', {{ param: value }})` for write functions (functions that change state)
-- Use `query('function_name', {{ param: value }})` for read/get functions
-- CRITICAL TYPE WRAPPING:
-  * u64 params (any ID, count, timestamp, duration) → wrap with u64(): `{{ id: u64(value) }}`
-  * i128 params (any amount, price, balance, goal) → wrap with i128(): `{{ amount: i128(value) }}`
-  * Address params → just pass the string pubKey directly (auto-detected)
-  * String params → just pass the string directly
-  * bool params → just pass true/false
-- ONLY pass arguments that EXACTLY match the contract function params — no extra args!
-- ALWAYS call `getPublicKey()` first in every handler to get the wallet address
-- Use CSS classes: container, card, card-header, btn, input, label, status, text-muted
-- Add loading states with the spinner class
-- Show error and txStatus feedback
-- Keep it SIMPLE: 2-4 cards maximum, one per action group
-- Output the COMPLETE code from first import to final closing brace `}}`
-- NO markdown code fences, NO explanations — just the JSX code
-- ALL braces MUST be balanced
-
-Output ONLY the complete App.jsx code now:"""
+Output COMPLETE App.jsx (no markdown, no explanation):"""
 
 
 FIX_CODE_SYSTEM_PROMPT = """You are a React code fixer. You will be given React code that has issues and need to fix them.
@@ -509,11 +284,10 @@ async def llm_generate_app(
     """Use LLM to generate custom App.jsx"""
 
     # Extract REAL function signatures from the compiled contract code
-    # These are authoritative — they override the architect's spec
     parsed_signatures = extract_function_signatures(rust_code)
 
     if parsed_signatures:
-        functions_detail = f"EXACT SIGNATURES FROM DEPLOYED CONTRACT (use ONLY these — parameter count MUST match):\n{parsed_signatures}"
+        functions_detail = parsed_signatures
         logger.info(f"[REACT_AGENT] Parsed function signatures from rust code:\n{parsed_signatures}")
     else:
         # Fallback to spec if rust code parsing fails
@@ -522,30 +296,18 @@ async def llm_generate_app(
         for f in functions:
             if isinstance(f, dict):
                 name = f.get("name", "unknown")
-                desc = f.get("description", "")
                 params = f.get("params", [])
                 returns = f.get("returns", "void")
                 param_str = ", ".join(params) if params else "none"
-                functions_detail_lines.append(f"- {name}({param_str}) → {returns}: {desc}")
+                functions_detail_lines.append(f"- {name}({param_str}) → {returns}")
             else:
                 functions_detail_lines.append(f"- {f}")
         functions_detail = "\n".join(functions_detail_lines) if functions_detail_lines else "Not specified"
 
-    # Format docs context from Context7
-    docs_context_section = ""
-    if docs_context:
-        docs_text = "\n\n".join(docs_context[:3])
-        if len(docs_text) > 2000:
-            docs_text = docs_text[:2000]
-        docs_context_section = f"\n## Stellar JS SDK Reference (from Context7):\n{docs_text}"
-
     user_prompt = REACT_AGENT_USER_PROMPT.format(
-        contract_id=contract_id,
         name=spec.get("name", "MyDApp"),
-        description=spec.get("description", "A Stellar DApp"),
+        description=spec.get("description", "A Stellar DApp")[:150],
         functions_detail=functions_detail,
-        rust_code=rust_code or "Not available",
-        docs_context_section=docs_context_section,
         ui_requirements=", ".join(spec.get("ui_requirements", [])) or "Standard DApp interface",
     )
 
@@ -554,7 +316,7 @@ async def llm_generate_app(
     response = await generate_completion(
         system_prompt=REACT_AGENT_SYSTEM_PROMPT,
         user_prompt=user_prompt,
-        temperature=0.0,  # Deterministic — nail it on first try
+        temperature=0.0,
         max_tokens=16384,
     )
 

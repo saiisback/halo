@@ -893,13 +893,14 @@ WORKING_TEMPLATES = {
 
 
 def format_docs_context(docs_context: list[str]) -> str:
-    """Format documentation context from Context7/RAG for prompt injection."""
+    """Format documentation context from RAG for prompt injection."""
     if not docs_context:
         return ""
-    combined = "\n\n---\n\n".join(docs_context)
-    if len(combined) > 4000:
-        combined = combined[:4000]
-    return f"## DOCUMENTATION (from Context7 — use these patterns):\n{combined}"
+    # Keep docs short to fit GPT-5's input token limit
+    combined = "\n\n".join(docs_context[:2])
+    if len(combined) > 1500:
+        combined = combined[:1500]
+    return f"## REFERENCE DOCS:\n{combined}"
 
 
 class RustGenerationResult(TypedDict):
@@ -1187,7 +1188,7 @@ async def generate_rust_contract(
     # Generate fresh code with working template as reference
     logger.info(f"[RUST_AGENT] Generating fresh contract code...")
 
-    # Format documentation from Context7/RAG pipeline
+    # Format documentation from RAG pipeline
     docs_context_section = format_docs_context(docs_context)
 
     user_prompt = RUST_AGENT_USER_PROMPT.format(
