@@ -62,6 +62,10 @@ FALLBACK_IMAGE = "stellar/quickstart:soroban-dev"
 # Persistent cargo cache volume for faster builds
 CARGO_CACHE_VOLUME = "halo-cargo-cache"
 
+# Persistent target cache volume - compiled dependencies survive across builds
+# First build compiles all ~161 deps (~60s), subsequent builds only recompile user code (~5-10s)
+TARGET_CACHE_VOLUME = "halo-target-cache"
+
 
 async def compile_contract(
     lib_rs: str,
@@ -207,7 +211,10 @@ def _sync_docker_build(
         build_cmd = """
         set -e
         cd /workspace
-        
+
+        # Use shared target cache so compiled dependencies persist across builds
+        export CARGO_TARGET_DIR="/target-cache"
+
         # Disable WebAssembly reference-types (not supported by Soroban VM)
         export RUSTFLAGS="-C target-feature=-reference-types"
 
@@ -226,8 +233,8 @@ def _sync_docker_build(
         echo "Building contract with RUSTFLAGS: $RUSTFLAGS"
         soroban contract build
 
-        # Find and copy the wasm file
-        find target -name "*.wasm" -type f | head -1 | xargs -I {} cp {} /workspace/output.wasm
+        # Find and copy the wasm file from target cache
+        find $CARGO_TARGET_DIR -name "*.wasm" -path "*/release/*" -type f | head -1 | xargs -I {} cp {} /workspace/output.wasm
 
         echo "Build complete!"
         """
@@ -241,6 +248,7 @@ def _sync_docker_build(
             volumes={
                 host_source_dir: {"bind": "/workspace", "mode": "rw"},
                 CARGO_CACHE_VOLUME: {"bind": "/root/.cargo", "mode": "rw"},
+                TARGET_CACHE_VOLUME: {"bind": "/target-cache", "mode": "rw"},
             },
             working_dir="/workspace",
             detach=True,

@@ -5,6 +5,7 @@ Generates embeddings using local sentence-transformers models.
 Uses all-MiniLM-L6-v2 for efficient, high-quality embeddings.
 """
 
+import asyncio
 from typing import Optional
 from sentence_transformers import SentenceTransformer
 
@@ -36,7 +37,10 @@ class LocalEmbeddings:
         """
         try:
             model = self._get_model()
-            embedding = model.encode(text, convert_to_numpy=True)
+            loop = asyncio.get_event_loop()
+            embedding = await loop.run_in_executor(
+                None, lambda: model.encode(text, convert_to_numpy=True)
+            )
             return embedding.tolist()
         except Exception as e:
             print(f"Embedding error: {e}")
@@ -54,7 +58,10 @@ class LocalEmbeddings:
         """
         try:
             model = self._get_model()
-            embeddings = model.encode(texts, convert_to_numpy=True)
+            loop = asyncio.get_event_loop()
+            embeddings = await loop.run_in_executor(
+                None, lambda: model.encode(texts, convert_to_numpy=True)
+            )
             return [emb.tolist() for emb in embeddings]
         except Exception as e:
             print(f"Batch embedding error: {e}")

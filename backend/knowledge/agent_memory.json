@@ -1,6 +1,12 @@
 {
   "error_fixes": [
     {
+      "error_pattern": "error: `cargo metadata` exited with an error: error: manifest path `Cargo.toml` does not exist",
+      "fix_description": "",
+      "occurrences": 4,
+      "last_seen": "2026-02-07T22:46:55.008489+00:00"
+    },
+    {
       "error_pattern": "error[E0308]: mismatched types",
       "fix_description": "",
       "occurrences": 3,
@@ -31,13 +37,32 @@
       "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct StakeInfo {\n    pub amount: i128,\n    pub rewards: i128,\n    pub last_update: u64,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    Admin,\n    RewardRate,\n    StakeInfo(Address),\n    TotalStaked,\n}\n\n#[contract]\npub struct StakingDashboard;\n\n#[contractimpl]\nimpl StakingDashboard {\n    pub fn initialize(env: Env, admin: Address, reward_rate: u64) {\n      ",
       "compile_attempts": 1,
       "timestamp": "2026-02-07T20:55:52.174279+00:00"
+    },
+    "game_53bec0861e69": {
+      "spec_summary": "A simple coin flip game where users bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Game {\n    pub player: Address,\n    pub choice: bool,\n    pub amount: i128,\n    pub resolved: bool,\n    pub result: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Game(u64),\n    NextGameId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        ",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T21:28:53.366927+00:00"
+    },
+    "game_1057d296c6fb": {
+      "spec_summary": "A simple coin flip game where users bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct PlayerStats {\n    pub wins: u64,\n    pub losses: u64,\n    pub total_bet: i128,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Stats(Address),\n    GameCount,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n        env.storage().instance().set",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T22:54:46.039647+00:00"
+    },
+    "game_28cc20655090": {
+      "spec_summary": "A simple coin flip game where users bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct PlayerStats {\n    pub wins: u64,\n    pub losses: u64,\n    pub total_bet: i128,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Stats(Address),\n    GameCount,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n        env.storage().instance().set",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T23:00:46.635675+00:00"
     }
   },
   "generation_stats": {
-    "total_generations": 3,
-    "first_attempt_success": 3,
-    "required_retries": 4,
+    "total_generations": 6,
+    "first_attempt_success": 6,
+    "required_retries": 8,
     "common_errors": [
+      "error: `cargo metadata` exited with an error: error: manifest path `Cargo.toml` does not exist",
       "error[E0308]: mismatched types",
       "|         ---------------------------   ^^^^^^^^^^^^^^^^^^^^^^^ expected `u64`, found `u32`"
     ]

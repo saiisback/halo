@@ -11,6 +11,7 @@ This is the core state machine that manages the entire build process:
 7. Generate React frontend
 """
 
+import asyncio
 import logging
 from typing import TypedDict, Literal, AsyncGenerator, Optional
 from langgraph.graph import StateGraph, END
@@ -594,23 +595,33 @@ async def run_pipeline(
     }
 
     try:
-        # Phase 1: Analyze
-        state = await analyze_node(state)
-        for event in state["events"]:
+        # Phase 1: Analyze + Retrieve all docs in parallel
+        # All three steps only depend on the raw prompt, no interdependencies
+        analyze_state = {**state, "events": []}
+        rust_docs_state = {**state, "events": []}
+        js_docs_state = {**state, "events": []}
+
+        analyze_result, rust_docs_result, js_docs_result = await asyncio.gather(
+            analyze_node(analyze_state),
+            retrieve_rust_docs_node(rust_docs_state),
+            retrieve_js_docs_node(js_docs_state),
+        )
+
+        # Merge results back into state
+        state["template_type"] = analyze_result["template_type"]
+        state["contract_spec"] = analyze_result["contract_spec"]
+        state["rust_docs"] = rust_docs_result["rust_docs"]
+        state["js_docs"] = js_docs_result["js_docs"]
+
+        # Yield all events from parallel steps
+        for event in analyze_result["events"] + rust_docs_result["events"] + js_docs_result["events"]:
             yield event
-        state["events"] = []
-        
-        if state.get("error"):
-            yield {"step": "error", "error": state["error"], "status": "failed"}
+
+        if analyze_result.get("error"):
+            yield {"step": "error", "error": analyze_result["error"], "status": "failed"}
             return
 
-        # Phase 2: Retrieve Rust docs
-        state = await retrieve_rust_docs_node(state)
-        for event in state["events"]:
-            yield event
-        state["events"] = []
-
-        # Phase 3: Generate, Compile, Deploy loop with retries
+        # Phase 2: Generate, Compile, Deploy loop with retries
         while True:
             # Generate Rust
             state = await generate_rust_node(state)
@@ -661,13 +672,7 @@ async def run_pipeline(
             else:
                 break
 
-        # Phase 4: Retrieve JS docs
-        state = await retrieve_js_docs_node(state)
-        for event in state["events"]:
-            yield event
-        state["events"] = []
-
-        # Phase 5: Generate React
+        # Phase 3: Generate React (JS docs already retrieved in Phase 1)
         state = await generate_react_node(state)
         for event in state["events"]:
             yield event

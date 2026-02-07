@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { useHaloStore, type BuildStep } from '@/lib/store'
 import { WalletButton } from '@/components/chat/WalletButton'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { publishToVercel } from '@/lib/api'
 import {
   Share2,
   Rocket,
@@ -53,11 +55,62 @@ function getBuildCategory(status: BuildStep): string {
 }
 
 export function Navbar() {
-  const { buildStatus, theme, toggleTheme } = useHaloStore()
+  const { buildStatus, theme, toggleTheme, generatedFiles, contractId, contractSpec } = useHaloStore()
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [publishError, setPublishError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const category = getBuildCategory(buildStatus)
   const config = STATUS_CONFIG[category]
   const StatusIcon = config.icon
+
+  const hasFiles = Object.keys(generatedFiles || {}).length > 0
+  const canPublish = buildStatus === 'complete' && !!contractId && hasFiles && !isPublishing
+
+  const handlePublish = async () => {
+    if (!contractId || !hasFiles || isPublishing) return
+    setIsPublishing(true)
+    setPublishError(null)
+
+    try {
+      const name =
+        (typeof (contractSpec as any)?.name === 'string' ? (contractSpec as any).name : null) ||
+        'halo-dapp'
+
+      const res = await publishToVercel({
+        contract_id: contractId,
+        files: generatedFiles,
+        name,
+        network: 'testnet',
+      })
+
+      const url = res.url ? (res.url.startsWith('http') ? res.url : `https://${res.url}`) : null
+      if (!url) {
+        throw new Error('Publish succeeded but no URL returned')
+      }
+
+      setPublishedUrl(url)
+      // Open automatically for the “one click publish” experience
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to publish'
+      setPublishError(msg)
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  const copyUrl = async () => {
+    if (!publishedUrl) return
+    try {
+      await navigator.clipboard.writeText(publishedUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore
+    }
+  }
 
   return (
     <nav className="flex h-12 shrink-0 items-center border-b border-[var(--border-color)] bg-[var(--surface)] px-4">
@@ -109,10 +162,45 @@ export function Navbar() {
           <span>Share</span>
         </button>
 
-        <button className="flex items-center gap-1.5 rounded-xl bg-nb-gold border border-nb-gold px-3.5 py-1.5 text-xs font-semibold text-black transition-all hover:bg-nb-amber hover:border-nb-amber btn-press glow-gold-sm">
-          <Rocket className="h-3.5 w-3.5" />
-          <span>Deploy</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handlePublish}
+            disabled={!canPublish}
+            title={
+              publishError
+                ? `Publish failed: ${publishError}`
+                : !canPublish
+                  ? 'Generate a DApp first (must be complete) to publish'
+                  : 'Publish this DApp to Vercel'
+            }
+            className={cn(
+              'flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all btn-press',
+              canPublish
+                ? 'bg-nb-gold border-nb-gold text-black hover:bg-nb-amber hover:border-nb-amber glow-gold-sm'
+                : 'bg-nb-gold/20 border-nb-gold/20 text-nb-gold/60 cursor-not-allowed'
+            )}
+          >
+            {isPublishing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Rocket className="h-3.5 w-3.5" />
+            )}
+            <span>{isPublishing ? 'Publishing…' : publishedUrl ? 'Published' : 'Deploy'}</span>
+          </button>
+
+          {publishedUrl && (
+            <button
+              onClick={copyUrl}
+              title={copied ? 'Copied!' : 'Copy published URL'}
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-xl border transition-all btn-press',
+                'bg-nb-gold/10 border-nb-gold/20 text-nb-gold hover:bg-nb-gold/20'
+              )}
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
 
         <WalletButton />
       </div>

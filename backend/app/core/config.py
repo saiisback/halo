@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     docker_timeout_seconds: int = 60
     soroban_builder_image: str = "halo-soroban-builder:latest"
 
+    # Vercel (one-click publish)
+    vercel_api_token: str = ""
+    vercel_team_id: str | None = None
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

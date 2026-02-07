@@ -39,6 +39,7 @@ services:
       # Build directory paths for Docker-in-Docker volume mounting
       - BUILD_DIR=/app/builds
       - HOST_BUILD_DIR=${PWD}/backend/builds
+      - VERCEL_API_TOKEN=${VERCEL_API_TOKEN}
     volumes:
       - ./backend:/app
       - /var/run/docker.sock:/var/run/docker.sock

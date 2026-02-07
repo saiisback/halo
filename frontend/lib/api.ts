@@ -90,6 +90,52 @@ export async function checkHealth(): Promise<boolean> {
 }
 
 // ---------------------------------------------------------------------------
+// Publish API (One-click Vercel publish)
+// ---------------------------------------------------------------------------
+
+export interface PublishRequest {
+  contract_id: string
+  files: Record<string, string>
+  name?: string
+  network?: string
+}
+
+export interface PublishResponse {
+  success: boolean
+  url?: string
+  deployment_id?: string
+  error?: string
+}
+
+export async function publishToVercel(request: PublishRequest): Promise<PublishResponse> {
+  const response = await fetch(`${API_URL}/api/v1/publish`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contract_id: request.contract_id,
+      files: request.files,
+      name: request.name,
+      network: request.network || 'testnet',
+    }),
+  })
+
+  if (!response.ok) {
+    let detail = `HTTP error! status: ${response.status}`
+    try {
+      const data = await response.json()
+      if (data?.detail) detail = String(data.detail)
+    } catch {
+      // ignore
+    }
+    throw new Error(detail)
+  }
+
+  return await response.json()
+}
+
+// ---------------------------------------------------------------------------
 // Protocols API
 // ---------------------------------------------------------------------------
 
