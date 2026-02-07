@@ -464,17 +464,18 @@ async def publish_to_vercel(
     generated_files: dict[str, str],
     contract_id: str,
     network: str = "testnet",
+    access_token_override: str | None = None,
 ) -> PublishResult:
     """
     Deploy the given generated files to Vercel and return the deployment URL.
     """
-    token = settings.vercel_api_token
+    token = (access_token_override or "").strip() or settings.vercel_api_token
     if not token:
         return PublishResult(
             success=False,
             url=None,
             deployment_id=None,
-            error="Missing VERCEL_API_TOKEN on backend",
+            error="Missing Vercel access token (user not connected, and no VERCEL_API_TOKEN configured)",
         )
 
     safe_name = _sanitize_deployment_name(name) if name else "halo-dapp"
@@ -490,7 +491,9 @@ async def publish_to_vercel(
         inlined_files.append({"file": file_path, "data": data})
 
     params: dict[str, str] = {"skipAutoDetectionConfirmation": "1"}
-    if settings.vercel_team_id:
+    # If using platform token, optionally deploy under a team.
+    # If using a user token (personal account flow), do not force a teamId.
+    if not access_token_override and settings.vercel_team_id:
         params["teamId"] = settings.vercel_team_id
 
     body: dict[str, Any] = {

@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useHaloStore, type BuildStep } from '@/lib/store'
 import { WalletButton } from '@/components/chat/WalletButton'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import { publishToVercel } from '@/lib/api'
 import {
   Share2,
   Rocket,
@@ -56,6 +55,8 @@ function getBuildCategory(status: BuildStep): string {
 
 export function Navbar() {
   const { buildStatus, theme, toggleTheme, generatedFiles, contractId, contractSpec } = useHaloStore()
+  const [vercelConnected, setVercelConnected] = useState(false)
+  const [isConnectingVercel, setIsConnectingVercel] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
   const [publishError, setPublishError] = useState<string | null>(null)
@@ -66,10 +67,110 @@ export function Navbar() {
   const StatusIcon = config.icon
 
   const hasFiles = Object.keys(generatedFiles || {}).length > 0
-  const canPublish = buildStatus === 'complete' && !!contractId && hasFiles && !isPublishing
+  const canPublish =
+    buildStatus === 'complete' && !!contractId && hasFiles && vercelConnected && !isPublishing
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/vercel/status')
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled) setVercelConnected(!!data?.connected)
+      } catch {
+        // ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const connectVercel = async () => {
+    if (isConnectingVercel || vercelConnected) return
+    setIsConnectingVercel(true)
+    setPublishError(null)
+
+    try {
+      const res = await fetch('/api/vercel/authorize')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || `Failed to start Vercel OAuth (${res.status})`)
+      }
+      const data = await res.json()
+      const authorizationUrl = data?.authorizationUrl as string | undefined
+      if (!authorizationUrl) throw new Error('Missing authorizationUrl')
+
+      const popup = window.open(
+        authorizationUrl,
+        'vercel-oauth',
+        'popup=yes,width=520,height=720'
+      )
+      if (!popup) throw new Error('Popup blocked. Please allow popups and try again.')
+
+      const codeAndState = await new Promise<{ code: string; state: string }>((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+          cleanup()
+          reject(new Error('Vercel connect timed out'))
+        }, 5 * 60 * 1000)
+
+        const cleanup = () => {
+          window.clearTimeout(timeout)
+          window.removeEventListener('message', onMessage)
+        }
+
+        const pick = (obj: any): { code?: string; state?: string } => {
+          if (!obj || typeof obj !== 'object') return {}
+          if (typeof obj.code === 'string' && typeof obj.state === 'string') {
+            return { code: obj.code, state: obj.state }
+          }
+          if (obj.response && typeof obj.response === 'object') {
+            return pick(obj.response)
+          }
+          return {}
+        }
+
+        const onMessage = (event: MessageEvent) => {
+          if (event.origin !== 'https://vercel.com') return
+          const picked = pick(event.data)
+          if (picked.code && picked.state) {
+            cleanup()
+            resolve({ code: picked.code, state: picked.state })
+          }
+        }
+
+        window.addEventListener('message', onMessage)
+      })
+
+      const cb = await fetch(
+        `/api/vercel/callback?code=${encodeURIComponent(codeAndState.code)}&state=${encodeURIComponent(codeAndState.state)}`
+      )
+      if (!cb.ok) {
+        const err = await cb.json().catch(() => null)
+        throw new Error(err?.error || `Vercel callback failed (${cb.status})`)
+      }
+
+      setVercelConnected(true)
+      try {
+        popup.close()
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to connect Vercel'
+      setPublishError(msg)
+    } finally {
+      setIsConnectingVercel(false)
+    }
+  }
 
   const handlePublish = async () => {
     if (!contractId || !hasFiles || isPublishing) return
+    if (!vercelConnected) {
+      setPublishError('Connect Vercel first')
+      return
+    }
     setIsPublishing(true)
     setPublishError(null)
 
@@ -78,12 +179,22 @@ export function Navbar() {
         (typeof (contractSpec as any)?.name === 'string' ? (contractSpec as any).name : null) ||
         'halo-dapp'
 
-      const res = await publishToVercel({
-        contract_id: contractId,
-        files: generatedFiles,
-        name,
-        network: 'testnet',
+      const resp = await fetch('/api/vercel/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contract_id: contractId,
+          files: generatedFiles,
+          name,
+          network: 'testnet',
+        }),
       })
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => null)
+        const detail = data?.detail || data?.error || `Publish failed (${resp.status})`
+        throw new Error(String(detail))
+      }
+      const res = await resp.json()
 
       const url = res.url ? (res.url.startsWith('http') ? res.url : `https://${res.url}`) : null
       if (!url) {
@@ -163,6 +274,27 @@ export function Navbar() {
         </button>
 
         <div className="flex items-center gap-1">
+          {!vercelConnected && (
+            <button
+              onClick={connectVercel}
+              disabled={isConnectingVercel}
+              title="Connect your Vercel account"
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all btn-press',
+                isConnectingVercel
+                  ? 'bg-nb-gold/20 border-nb-gold/20 text-nb-gold/70 cursor-not-allowed'
+                  : 'bg-nb-gold/10 border-nb-gold/20 text-nb-gold hover:bg-nb-gold/20'
+              )}
+            >
+              {isConnectingVercel ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Share2 className="h-3.5 w-3.5" />
+              )}
+              <span>{isConnectingVercel ? 'Connecting…' : 'Connect Vercel'}</span>
+            </button>
+          )}
+
           <button
             onClick={handlePublish}
             disabled={!canPublish}
@@ -170,7 +302,9 @@ export function Navbar() {
               publishError
                 ? `Publish failed: ${publishError}`
                 : !canPublish
-                  ? 'Generate a DApp first (must be complete) to publish'
+                  ? vercelConnected
+                    ? 'Generate a DApp first (must be complete) to publish'
+                    : 'Connect Vercel to publish'
                   : 'Publish this DApp to Vercel'
             }
             className={cn(

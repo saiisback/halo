@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
 
 from app.services.vercel_publish import publish_to_vercel
@@ -27,7 +27,10 @@ class PublishResponse(BaseModel):
 
 
 @router.post("/publish", response_model=PublishResponse)
-async def publish(request: PublishRequest) -> PublishResponse:
+async def publish(
+    request: PublishRequest,
+    x_vercel_access_token: Optional[str] = Header(default=None),
+) -> PublishResponse:
     """
     Publish the generated frontend to Vercel.
 
@@ -45,6 +48,7 @@ async def publish(request: PublishRequest) -> PublishResponse:
         generated_files=request.files,
         contract_id=request.contract_id.strip(),
         network=request.network or "testnet",
+        access_token_override=x_vercel_access_token,
     )
 
     if not result["success"]:
