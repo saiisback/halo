@@ -20,6 +20,7 @@ class PublishResult(TypedDict):
     success: bool
     url: str | None
     deployment_id: str | None
+    project_id: str | None
     vercel_status_code: int | None
     error: str | None
 
@@ -476,6 +477,7 @@ async def publish_to_vercel(
             success=False,
             url=None,
             deployment_id=None,
+            project_id=None,
             vercel_status_code=None,
             error="Missing Vercel access token (user not connected, and no VERCEL_API_TOKEN configured)",
         )
@@ -527,6 +529,7 @@ async def publish_to_vercel(
             success=False,
             url=None,
             deployment_id=None,
+            project_id=None,
             vercel_status_code=None,
             error=str(e),
         )
@@ -536,6 +539,7 @@ async def publish_to_vercel(
             success=False,
             url=None,
             deployment_id=None,
+            project_id=None,
             vercel_status_code=resp.status_code,
             error=f"Vercel API error ({resp.status_code}): {resp.text[:2000]}",
         )
@@ -545,7 +549,61 @@ async def publish_to_vercel(
         success=True,
         url=data.get("url"),
         deployment_id=data.get("id"),
+        project_id=data.get("projectId") or (data.get("project", {}) or {}).get("id"),
         vercel_status_code=None,
         error=None,
     )
+
+
+class TransferRequestResult(TypedDict):
+    success: bool
+    code: str | None
+    vercel_status_code: int | None
+    error: str | None
+
+
+async def create_project_transfer_request(
+    *,
+    project_id_or_name: str,
+    bearer_token: str,
+) -> TransferRequestResult:
+    """
+    Create a project transfer request code (Claim Deployments flow).
+    """
+    params: dict[str, str] = {}
+    if settings.vercel_team_id:
+        params["teamId"] = settings.vercel_team_id
+
+    headers = {"Authorization": f"Bearer {bearer_token}"}
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"https://api.vercel.com/projects/{project_id_or_name}/transfer-request",
+                params=params,
+                headers=headers,
+                json={},
+            )
+    except Exception as e:
+        return TransferRequestResult(success=False, code=None, vercel_status_code=None, error=str(e))
+
+    if resp.status_code >= 400:
+        return TransferRequestResult(
+            success=False,
+            code=None,
+            vercel_status_code=resp.status_code,
+            error=f"Vercel transfer-request error ({resp.status_code}): {resp.text[:2000]}",
+        )
+
+    data = resp.json()
+    return TransferRequestResult(success=True, code=data.get("code"), vercel_status_code=None, error=None)
+
+
+def build_claim_url(*, code: str, return_url: str) -> str:
+    """
+    Build a Vercel claim-deployment URL.
+    """
+    from urllib.parse import quote
+
+    # Keep it simple: Vercel will handle validation and redirect to returnUrl if invalid/expired.
+    return f"https://vercel.com/claim-deployment?code={quote(code, safe='')}&returnUrl={quote(return_url, safe='')}"
 

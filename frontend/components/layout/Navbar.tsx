@@ -5,6 +5,7 @@ import { useHaloStore, type BuildStep } from '@/lib/store'
 import { WalletButton } from '@/components/chat/WalletButton'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { publishClaimableToVercel } from '@/lib/api'
 import {
   Share2,
   Rocket,
@@ -60,6 +61,7 @@ export function Navbar() {
   const [vercelUser, setVercelUser] = useState<{ username?: string | null; name?: string | null; id?: string | null } | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
+  const [claimUrl, setClaimUrl] = useState<string | null>(null)
   const [publishError, setPublishError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -69,7 +71,7 @@ export function Navbar() {
 
   const hasFiles = Object.keys(generatedFiles || {}).length > 0
   const canPublish =
-    buildStatus === 'complete' && !!contractId && hasFiles && vercelConnected && !isPublishing
+    buildStatus === 'complete' && !!contractId && hasFiles && !isPublishing
 
   useEffect(() => {
     let cancelled = false
@@ -210,34 +212,23 @@ export function Navbar() {
 
   const handlePublish = async () => {
     if (!contractId || !hasFiles || isPublishing) return
-    if (!vercelConnected) {
-      setPublishError('Connect Vercel first')
-      return
-    }
     setIsPublishing(true)
     setPublishError(null)
+    setClaimUrl(null)
 
     try {
       const name =
         (typeof (contractSpec as any)?.name === 'string' ? (contractSpec as any).name : null) ||
         'halo-dapp'
 
-      const resp = await fetch('/api/vercel/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contract_id: contractId,
-          files: generatedFiles,
-          name,
-          network: 'testnet',
-        }),
+      // Claim Deployments flow: deploy with platform token, then user claims ownership.
+      const res = await publishClaimableToVercel({
+        contract_id: contractId,
+        files: generatedFiles,
+        name,
+        network: 'testnet',
+        return_url: window.location.href,
       })
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => null)
-        const detail = data?.detail || data?.error || `Publish failed (${resp.status})`
-        throw new Error(String(detail))
-      }
-      const res = await resp.json()
 
       const url = res.url ? (res.url.startsWith('http') ? res.url : `https://${res.url}`) : null
       if (!url) {
@@ -245,8 +236,14 @@ export function Navbar() {
       }
 
       setPublishedUrl(url)
-      // Open automatically for the “one click publish” experience
-      window.open(url, '_blank', 'noopener,noreferrer')
+      if (res.claim_url) {
+        setClaimUrl(res.claim_url)
+        // Open claim URL so user takes ownership immediately
+        window.open(res.claim_url, '_blank', 'noopener,noreferrer')
+      } else {
+        // If claim URL missing, still open the deployment
+        window.open(url, '_blank', 'noopener,noreferrer')
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to publish'
       setPublishError(msg)
@@ -275,6 +272,10 @@ export function Navbar() {
     } catch {
       // ignore
     }
+  }
+
+  const openClaim = () => {
+    if (claimUrl) window.open(claimUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -382,9 +383,7 @@ export function Navbar() {
               publishError
                 ? `Publish failed: ${publishError}`
                 : !canPublish
-                  ? vercelConnected
-                    ? 'Generate a DApp first (must be complete) to publish'
-                    : 'Connect Vercel to publish'
+                  ? 'Generate a DApp first (must be complete) to publish'
                   : 'Publish this DApp to Vercel'
             }
             className={cn(
@@ -401,6 +400,19 @@ export function Navbar() {
             )}
             <span>{isPublishing ? 'Publishing…' : publishedUrl ? 'Published' : 'Deploy'}</span>
           </button>
+
+          {claimUrl && (
+            <button
+              onClick={openClaim}
+              title="Claim this deployment in your Vercel account"
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all btn-press',
+                'bg-nb-gold/10 border-nb-gold/20 text-nb-gold hover:bg-nb-gold/20'
+              )}
+            >
+              <span>Claim</span>
+            </button>
+          )}
 
           {publishedUrl && (
             <button

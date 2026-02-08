@@ -104,6 +104,8 @@ export interface PublishResponse {
   success: boolean
   url?: string
   deployment_id?: string
+  claim_url?: string
+  transfer_code?: string
   error?: string
 }
 
@@ -118,6 +120,37 @@ export async function publishToVercel(request: PublishRequest): Promise<PublishR
       files: request.files,
       name: request.name,
       network: request.network || 'testnet',
+    }),
+  })
+
+  if (!response.ok) {
+    let detail = `HTTP error! status: ${response.status}`
+    try {
+      const data = await response.json()
+      if (data?.detail) detail = String(data.detail)
+    } catch {
+      // ignore
+    }
+    throw new Error(detail)
+  }
+
+  return await response.json()
+}
+
+export async function publishClaimableToVercel(
+  request: PublishRequest & { return_url: string }
+): Promise<PublishResponse> {
+  const response = await fetch(`${API_URL}/api/v1/publish/claim`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contract_id: request.contract_id,
+      files: request.files,
+      name: request.name,
+      network: request.network || 'testnet',
+      return_url: request.return_url,
     }),
   })
 
