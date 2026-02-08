@@ -452,92 +452,91 @@ def build_vite_project_files(
     )
 
     # Always include a wallet connect bar in published apps (preview had mock wallet).
-    out[\"src/components/WalletBar.jsx\"] = (
-        \"import { useEffect, useState } from 'react';\\n\"
-        \"import { isConnected, requestAccess, getPublicKey } from '@stellar/freighter-api';\\n\"
-        \"\\n\"
-        \"function truncate(addr) {\\n\"
-        \"  if (!addr) return '';\\n\"
-        \"  return `${addr.slice(0, 4)}...${addr.slice(-4)}`;\\n\"
-        \"}\\n\"
-        \"\\n\"
-        \"export function WalletBar() {\\n\"
-        \"  const [address, setAddress] = useState(null);\\n\"
-        \"  const [loading, setLoading] = useState(false);\\n\"
-        \"  const [error, setError] = useState(null);\\n\"
-        \"\\n\"
-        \"  useEffect(() => {\\n\"
-        \"    (async () => {\\n\"
-        \"      try {\\n\"
-        \"        const ok = await isConnected();\\n\"
-        \"        if (ok) {\\n\"
-        \"          const pk = await getPublicKey();\\n\"
-        \"          setAddress(pk);\\n\"
-        \"        }\\n\"
-        \"      } catch {\\n\"
-        \"        // ignore\\n\"
-        \"      }\\n\"
-        \"    })();\\n\"
-        \"  }, []);\\n\"
-        \"\\n\"
-        \"  const connect = async () => {\\n\"
-        \"    setLoading(true);\\n\"
-        \"    setError(null);\\n\"
-        \"    try {\\n\"
-        \"      await requestAccess();\\n\"
-        \"      const pk = await getPublicKey();\\n\"
-        \"      setAddress(pk);\\n\"
-        \"    } catch (e) {\\n\"
-        \"      setError(e?.message || 'Failed to connect wallet');\\n\"
-        \"    } finally {\\n\"
-        \"      setLoading(false);\\n\"
-        \"    }\\n\"
-        \"  };\\n\"
-        \"\\n\"
-        \"  return (\\n\"
-        \"    <div style={{\\n\"
-        \"      position: 'sticky',\\n\"
-        \"      top: 0,\\n\"
-        \"      zIndex: 50,\\n\"
-        \"      width: '100%',\\n\"
-        \"      padding: '10px 12px',\\n\"
-        \"      background: 'rgba(10, 10, 10, 0.85)',\\n\"
-        \"      borderBottom: '1px solid rgba(255,255,255,0.08)',\\n\"
-        \"      backdropFilter: 'blur(8px)',\\n\"
-        \"      display: 'flex',\\n\"
-        \"      alignItems: 'center',\\n\"
-        \"      justifyContent: 'space-between',\\n\"
-        \"      gap: 12,\\n\"
-        \"      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',\\n\"
-        \"      color: 'rgba(255,255,255,0.92)'\\n\"
-        \"    }}>\\n\"
-        \"      <div style={{ fontSize: 12, opacity: 0.9 }}>Freighter Wallet</div>\\n\"
-        \"      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>\\n\"
-        \"        {error && <div style={{ fontSize: 12, color: '#fca5a5', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{error}</div>}\\n\"
-        \"        {address ? (\\n\"
-        \"          <div style={{ fontSize: 12, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', opacity: 0.95 }}>Connected: {truncate(address)}</div>\\n\"
-        \"        ) : (\\n\"
-        \"          <button\\n\"
-        \"            onClick={connect}\\n\"
-        \"            disabled={loading}\\n\"
-        \"            style={{\\n\"
-        \"              fontSize: 12,\\n\"
-        \"              padding: '8px 10px',\\n\"
-        \"              borderRadius: 10,\\n\"
-        \"              border: '1px solid rgba(255,255,255,0.15)',\\n\"
-        \"              background: 'rgba(255,255,255,0.06)',\\n\"
-        \"              color: 'rgba(255,255,255,0.92)',\\n\"
-        \"              cursor: loading ? 'not-allowed' : 'pointer'\\n\"
-        \"            }}\\n\"
-        \"          >\\n\"
-        \"            {loading ? 'Connecting…' : 'Connect'}\\n\"
-        \"          </button>\\n\"
-        \"        )}\\n\"
-        \"      </div>\\n\"
-        \"    </div>\\n\"
-        \"  );\\n\"
-        \"}\\n\"
-    )
+    out["src/components/WalletBar.jsx"] = """import { useEffect, useState } from 'react';
+import { isConnected, requestAccess, getPublicKey } from '@stellar/freighter-api';
+
+function truncate(addr) {
+  if (!addr) return '';
+  return `${addr.slice(0, 4)}...${addr.slice(-4)}`;
+}
+
+export function WalletBar() {
+  const [address, setAddress] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const ok = await isConnected();
+        if (ok) {
+          const pk = await getPublicKey();
+          setAddress(pk);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
+  const connect = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await requestAccess();
+      const pk = await getPublicKey();
+      setAddress(pk);
+    } catch (e) {
+      setError(e?.message || 'Failed to connect wallet');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      width: '100%',
+      padding: '10px 12px',
+      background: 'rgba(10, 10, 10, 0.85)',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      backdropFilter: 'blur(8px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+      color: 'rgba(255,255,255,0.92)'
+    }}>
+      <div style={{ fontSize: 12, opacity: 0.9 }}>Freighter Wallet</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {error && <div style={{ fontSize: 12, color: '#fca5a5', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{error}</div>}
+        {address ? (
+          <div style={{ fontSize: 12, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', opacity: 0.95 }}>Connected: {truncate(address)}</div>
+        ) : (
+          <button
+            onClick={connect}
+            disabled={loading}
+            style={{
+              fontSize: 12,
+              padding: '8px 10px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.92)',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+          >
+            {loading ? 'Connecting…' : 'Connect'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+"""
 
     out["src/App.jsx"] = app_src
     out["src/index.css"] = index_css
