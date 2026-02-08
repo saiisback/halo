@@ -100,20 +100,6 @@ async def deploy_contract(
             user_wallet=user_wallet,
         )
 
-        # Auto-initialize if contract has an initialize function
-        if result["success"] and result["contract_id"] and rust_code:
-            if _has_initialize_fn(rust_code):
-                print(f"[DEPLOYER] Contract has initialize() — calling it with admin={hot_wallet.public_key}")
-                init_ok = await _auto_initialize(
-                    contract_id=result["contract_id"],
-                    hot_wallet=hot_wallet,
-                    network_config=network_config,
-                )
-                if init_ok:
-                    print("[DEPLOYER] Auto-initialize succeeded")
-                else:
-                    print("[DEPLOYER] Auto-initialize failed (non-fatal, contract still deployed)")
-
         return result
 
     except Exception as e:
