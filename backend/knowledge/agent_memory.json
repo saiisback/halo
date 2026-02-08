@@ -109,11 +109,17 @@
       "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct PlayerStats {\n    pub total_flips: u64,\n    pub wins: u64,\n    pub total_bet: i128,\n    pub total_won: i128,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Stats(Address),\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n        env.storage()",
       "compile_attempts": 1,
       "timestamp": "2026-02-08T00:39:35.275659+00:00"
+    },
+    "marketplace_3f16c06226a5": {
+      "spec_summary": "A marketplace where agents can list knowledge offerings and users can purchase access with XLM",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, String, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Listing {\n    pub agent: Address,\n    pub title: String,\n    pub price: i128,\n    pub active: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    Admin,\n    Listing(u64),\n    Purchase(u64, Address),\n    Balance(Address),\n    NextListingId,\n    Token,\n}\n\n#[contract]\npub struct KnowledgeMarketplace;\n\n#[contractimpl]\nimpl KnowledgeMarketp",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-08T04:59:57.590581+00:00"
     }
   },
   "generation_stats": {
-    "total_generations": 15,
-    "first_attempt_success": 15,
+    "total_generations": 16,
+    "first_attempt_success": 16,
     "required_retries": 8,
     "common_errors": [
       "error: `cargo metadata` exited with an error: error: manifest path `Cargo.toml` does not exist",
