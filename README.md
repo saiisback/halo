@@ -1,10 +1,10 @@
 # Halo - Text-to-DApp Engine
 
-Halo is an AI-powered platform that lets anyone build, deploy, and interact with decentralized applications on the **Stellar blockchain** using plain English. Describe your DApp idea in natural language, and Halo handles the entire pipeline — from generating Soroban smart contracts in Rust, compiling to WebAssembly, deploying to Stellar Testnet, and creating a live React frontend with wallet integration — all in one seamless flow.
+Halo is an AI-powered platform that lets anyone build, deploy, and interact with decentralized applications on the **Stellar blockchain** using plain English. Describe your DApp idea in natural language, and Halo handles the entire pipeline from generating Soroban smart contracts in Rust, compiling to WebAssembly, deploying to Stellar Testnet, and creating a live React frontend with wallet integration all in one seamless flow.
 
 ## Contract Address
 
-Halo dynamically generates and deploys smart contracts to the **Stellar Soroban Testnet** for each user request. There is no single fixed contract address — every generation produces a new on-chain contract.
+Halo dynamically generates and deploys smart contracts to the **Stellar Soroban Testnet** for each user request. There is no single fixed contract address  every generation produces a new on-chain contract.
 
 | Detail | Value |
 |--------|-------|
