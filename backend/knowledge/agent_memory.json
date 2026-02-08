@@ -61,11 +61,35 @@
       "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Bet {\n    pub player: Address,\n    pub amount: i128,\n    pub choice: bool,\n    pub result: bool,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Bet(u64),\n    NextBetId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        hou",
       "compile_attempts": 1,
       "timestamp": "2026-02-07T23:32:38.797725+00:00"
+    },
+    "game_ffd70615fdc3": {
+      "spec_summary": "A simple coin flip betting game where players bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Bet {\n    pub player: Address,\n    pub choice: bool,\n    pub amount: i128,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Bet(u64),\n    NextBetId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n   ",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T23:37:04.761664+00:00"
+    },
+    "game_018d684981cf": {
+      "spec_summary": "A coin flip betting game where users bet on heads or tails and win double their bet if correct",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Bet {\n    pub player: Address,\n    pub amount: i128,\n    pub choice: bool,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Bet(u64),\n    NextBetId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        house.require_auth();\n   ",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T23:41:10.003287+00:00"
+    },
+    "game_6ca632bb1fb1": {
+      "spec_summary": "A simple on-chain coin flip game where users bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Bet {\n    pub player: Address,\n    pub choice: bool,\n    pub amount: i128,\n    pub token: Address,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Bet(u64),\n    NextBetId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        h",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-07T23:54:16.382025+00:00"
+    },
+    "game_b14c48d416c7": {
+      "spec_summary": "A simple coin flipping game where players bet on heads or tails",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Game {\n    pub player: Address,\n    pub choice: bool,\n    pub amount: i128,\n    pub result: bool,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Game(u64),\n    NextGameId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        ",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-08T00:02:46.421176+00:00"
     }
   },
   "generation_stats": {
-    "total_generations": 7,
-    "first_attempt_success": 7,
+    "total_generations": 11,
+    "first_attempt_success": 11,
     "required_retries": 8,
     "common_errors": [
       "error: `cargo metadata` exited with an error: error: manifest path `Cargo.toml` does not exist",

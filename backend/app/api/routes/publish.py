@@ -52,7 +52,13 @@ async def publish(
     )
 
     if not result["success"]:
-        raise HTTPException(status_code=500, detail=result.get("error") or "Publish failed")
+        vercel_status = result.get("vercel_status_code")
+        detail = result.get("error") or "Publish failed"
+        if vercel_status in (401, 403):
+            raise HTTPException(status_code=403, detail=detail)
+        if vercel_status == 429:
+            raise HTTPException(status_code=429, detail=detail)
+        raise HTTPException(status_code=500, detail=detail)
 
     return PublishResponse(
         success=True,

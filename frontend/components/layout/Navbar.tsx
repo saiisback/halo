@@ -57,6 +57,7 @@ export function Navbar() {
   const { buildStatus, theme, toggleTheme, generatedFiles, contractId, contractSpec } = useHaloStore()
   const [vercelConnected, setVercelConnected] = useState(false)
   const [isConnectingVercel, setIsConnectingVercel] = useState(false)
+  const [vercelUser, setVercelUser] = useState<{ username?: string | null; name?: string | null; id?: string | null } | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null)
   const [publishError, setPublishError] = useState<string | null>(null)
@@ -87,71 +88,113 @@ export function Navbar() {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    if (!vercelConnected) {
+      setVercelUser(null)
+      return
+    }
+    ;(async () => {
+      try {
+        const res = await fetch('/api/vercel/user', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        setVercelUser({
+          username: data?.username ?? null,
+          name: data?.name ?? null,
+          id: data?.id ?? null,
+        })
+      } catch {
+        // ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [vercelConnected])
+
   const connectVercel = async () => {
     if (isConnectingVercel || vercelConnected) return
     setIsConnectingVercel(true)
     setPublishError(null)
 
     try {
-      const res = await fetch('/api/vercel/authorize')
-      if (!res.ok) {
-        const data = await res.json().catch(() => null)
-        throw new Error(data?.error || `Failed to start Vercel OAuth (${res.status})`)
-      }
-      const data = await res.json()
-      const authorizationUrl = data?.authorizationUrl as string | undefined
-      if (!authorizationUrl) throw new Error('Missing authorizationUrl')
-
       const popup = window.open(
-        authorizationUrl,
+        '/api/vercel/authorize',
         'vercel-oauth',
         'popup=yes,width=520,height=720'
       )
       if (!popup) throw new Error('Popup blocked. Please allow popups and try again.')
 
-      const codeAndState = await new Promise<{ code: string; state: string }>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
+        const startedAt = Date.now()
+        const maxMs = 2 * 60 * 1000
+
+        const cleanup = () => {
+          window.removeEventListener('message', onMessage)
+          window.clearInterval(poll)
+          window.clearTimeout(timeout)
+        }
+
         const timeout = window.setTimeout(() => {
           cleanup()
           reject(new Error('Vercel connect timed out'))
-        }, 5 * 60 * 1000)
-
-        const cleanup = () => {
-          window.clearTimeout(timeout)
-          window.removeEventListener('message', onMessage)
-        }
-
-        const pick = (obj: any): { code?: string; state?: string } => {
-          if (!obj || typeof obj !== 'object') return {}
-          if (typeof obj.code === 'string' && typeof obj.state === 'string') {
-            return { code: obj.code, state: obj.state }
-          }
-          if (obj.response && typeof obj.response === 'object') {
-            return pick(obj.response)
-          }
-          return {}
-        }
+        }, maxMs)
 
         const onMessage = (event: MessageEvent) => {
-          if (event.origin !== 'https://vercel.com') return
-          const picked = pick(event.data)
-          if (picked.code && picked.state) {
+          // If opener messaging works, resolve immediately.
+          if (event.origin !== window.location.origin) return
+          const data = event.data as any
+          if (data?.type === 'vercel_oauth_complete') {
             cleanup()
-            resolve({ code: picked.code, state: picked.state })
+            if (data?.success) resolve()
+            else reject(new Error(data?.error || 'Failed to connect Vercel'))
           }
         }
-
         window.addEventListener('message', onMessage)
+
+        const poll = window.setInterval(async () => {
+          try {
+            // Even if the popup cannot message the opener (some browsers open a tab without opener),
+            // we can detect success because the server stored the access token in an httpOnly cookie.
+            const res = await fetch('/api/vercel/status', { cache: 'no-store' })
+            if (res.ok) {
+              const data = await res.json().catch(() => null)
+              if (data?.connected) {
+                cleanup()
+                resolve()
+                return
+              }
+            }
+          } catch {
+            // ignore
+          }
+
+          // If popup was closed and we still aren't connected, fail fast.
+          const elapsed = Date.now() - startedAt
+          if (elapsed > 3000 && popup.closed) {
+            // Give a short grace period in case cookie propagation is delayed.
+            // We'll keep polling until timeout unless closed very early and still disconnected.
+          }
+        }, 750)
       })
 
-      const cb = await fetch(
-        `/api/vercel/callback?code=${encodeURIComponent(codeAndState.code)}&state=${encodeURIComponent(codeAndState.state)}`
-      )
-      if (!cb.ok) {
-        const err = await cb.json().catch(() => null)
-        throw new Error(err?.error || `Vercel callback failed (${cb.status})`)
-      }
-
       setVercelConnected(true)
+      // Fetch Vercel profile for display
+      try {
+        const u = await fetch('/api/vercel/user', { cache: 'no-store' })
+        if (u.ok) {
+          const data = await u.json()
+          setVercelUser({
+            username: data?.username ?? null,
+            name: data?.name ?? null,
+            id: data?.id ?? null,
+          })
+        }
+      } catch {
+        // ignore
+      }
       try {
         popup.close()
       } catch {
@@ -212,6 +255,17 @@ export function Navbar() {
     }
   }
 
+  const disconnectVercel = async () => {
+    setPublishError(null)
+    try {
+      await fetch('/api/vercel/logout', { method: 'POST' })
+    } catch {
+      // ignore
+    }
+    setVercelConnected(false)
+    setVercelUser(null)
+  }
+
   const copyUrl = async () => {
     if (!publishedUrl) return
     try {
@@ -268,10 +322,23 @@ export function Navbar() {
           )}
         </button>
 
-        <button className="flex items-center gap-1.5 rounded-xl bg-nb-gold/10 border border-nb-gold/20 px-3.5 py-1.5 text-xs font-semibold text-nb-gold transition-all hover:bg-nb-gold hover:text-black btn-press">
-          <Share2 className="h-3.5 w-3.5" />
-          <span>Share</span>
-        </button>
+       
+        {vercelConnected && (
+          <div
+            title={
+              vercelUser?.username
+                ? `Connected as ${vercelUser.username}`
+                : vercelUser?.id
+                  ? `Connected (user id: ${vercelUser.id})`
+                  : 'Connected to Vercel'
+            }
+            className="hidden sm:flex items-center gap-1.5 rounded-xl bg-nb-gold/10 border border-nb-gold/20 px-3 py-1.5 text-xs font-semibold text-nb-gold"
+          >
+            <span className="max-w-[140px] truncate">
+              {vercelUser?.username || vercelUser?.name || (vercelUser?.id ? `id:${vercelUser.id.slice(0, 8)}` : 'Vercel')}
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center gap-1">
           {!vercelConnected && (
@@ -292,6 +359,19 @@ export function Navbar() {
                 <Share2 className="h-3.5 w-3.5" />
               )}
               <span>{isConnectingVercel ? 'Connecting…' : 'Connect Vercel'}</span>
+            </button>
+          )}
+
+          {vercelConnected && (
+            <button
+              onClick={disconnectVercel}
+              title="Disconnect Vercel"
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-semibold transition-all btn-press',
+                'bg-nb-gold/10 border-nb-gold/20 text-nb-gold hover:bg-nb-gold/20'
+              )}
+            >
+              <span>Disconnect</span>
             </button>
           )}
 

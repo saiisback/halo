@@ -20,6 +20,7 @@ class PublishResult(TypedDict):
     success: bool
     url: str | None
     deployment_id: str | None
+    vercel_status_code: int | None
     error: str | None
 
 
@@ -475,6 +476,7 @@ async def publish_to_vercel(
             success=False,
             url=None,
             deployment_id=None,
+            vercel_status_code=None,
             error="Missing Vercel access token (user not connected, and no VERCEL_API_TOKEN configured)",
         )
 
@@ -521,13 +523,20 @@ async def publish_to_vercel(
                 json=body,
             )
     except Exception as e:
-        return PublishResult(success=False, url=None, deployment_id=None, error=str(e))
+        return PublishResult(
+            success=False,
+            url=None,
+            deployment_id=None,
+            vercel_status_code=None,
+            error=str(e),
+        )
 
     if resp.status_code >= 400:
         return PublishResult(
             success=False,
             url=None,
             deployment_id=None,
+            vercel_status_code=resp.status_code,
             error=f"Vercel API error ({resp.status_code}): {resp.text[:2000]}",
         )
 
@@ -536,6 +545,7 @@ async def publish_to_vercel(
         success=True,
         url=data.get("url"),
         deployment_id=data.get("id"),
+        vercel_status_code=None,
         error=None,
     )
 

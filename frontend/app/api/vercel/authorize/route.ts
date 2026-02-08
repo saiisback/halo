@@ -16,13 +16,15 @@ function randomString(bytes = 32) {
   return base64Url(crypto.randomBytes(bytes))
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const clientId = process.env.VERCEL_OAUTH_CLIENT_ID
-  const redirectUri = process.env.VERCEL_OAUTH_REDIRECT_URI
+  const origin = new URL(req.url).origin
+  const redirectUri =
+    process.env.VERCEL_OAUTH_REDIRECT_URI || `${origin}/api/vercel/callback`
 
-  if (!clientId || !redirectUri) {
+  if (!clientId) {
     return NextResponse.json(
-      { error: 'Missing VERCEL_OAUTH_CLIENT_ID or VERCEL_OAUTH_REDIRECT_URI' },
+      { error: 'Missing VERCEL_OAUTH_CLIENT_ID' },
       { status: 500 }
     )
   }
@@ -60,16 +62,14 @@ export async function GET() {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'openid email profile offline_access',
     state,
     nonce,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
-    // Popup flow: Vercel will postMessage the response to opener
-    response_mode: 'web_message.opener',
   })
 
   const authorizationUrl = `https://vercel.com/oauth/authorize?${params.toString()}`
-  return NextResponse.json({ authorizationUrl })
+  // Redirect so the popup can follow the OAuth flow end-to-end.
+  return NextResponse.redirect(authorizationUrl)
 }
 
