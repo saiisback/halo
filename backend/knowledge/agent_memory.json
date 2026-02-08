@@ -97,11 +97,17 @@
       "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub struct Game {\n    pub player: Address,\n    pub choice: bool,\n    pub amount: i128,\n    pub result: bool,\n    pub resolved: bool,\n    pub won: bool,\n}\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Game(u64),\n    NextGameId,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address) {\n        ",
       "compile_attempts": 1,
       "timestamp": "2026-02-08T00:29:54.611653+00:00"
+    },
+    "game_30e4905b4b5c": {
+      "spec_summary": "A simple coin flip game where users bet on heads or tails and win double their bet if correct",
+      "code_snippet": "#![no_std]\nuse soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};\n\n#[contracttype]\n#[derive(Clone)]\npub enum DataKey {\n    House,\n    Token,\n    Balance,\n}\n\n#[contract]\npub struct CoinFlip;\n\n#[contractimpl]\nimpl CoinFlip {\n    pub fn initialize(env: Env, house: Address, token: Address) {\n        house.require_auth();\n        env.storage().instance().set(&DataKey::House, &house);\n        env.storage().instance().set(&DataKey::Token, &token);\n        env.storage().instance(",
+      "compile_attempts": 1,
+      "timestamp": "2026-02-08T00:34:20.083872+00:00"
     }
   },
   "generation_stats": {
-    "total_generations": 13,
-    "first_attempt_success": 13,
+    "total_generations": 14,
+    "first_attempt_success": 14,
     "required_retries": 8,
     "common_errors": [
       "error: `cargo metadata` exited with an error: error: manifest path `Cargo.toml` does not exist",
