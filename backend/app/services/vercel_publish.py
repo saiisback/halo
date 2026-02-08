@@ -100,6 +100,7 @@ def _use_contract_hook_source() -> str:
     """
     return """import { useState, useCallback } from 'react';
 import * as Stellar from '@stellar/stellar-sdk';
+import { isConnected, requestAccess, getPublicKey as freighterGetPublicKey, signTransaction as freighterSignTransaction } from '@stellar/freighter-api';
 import { CONTRACT_ID, SOROBAN_RPC_URL, STELLAR_NETWORK } from '../lib/stellar';
 
 const { Contract, TransactionBuilder, Networks, Address, nativeToScVal, scValToNative, xdr } = Stellar;
@@ -184,20 +185,12 @@ export function useContract(contractId = CONTRACT_ID) {
   const [txStatus, setTxStatus] = useState(null);
 
   const checkWallet = useCallback(async () => {
-    if (typeof window === 'undefined') return false;
-    if (!window.freighter) {
-      setError('Please install Freighter wallet');
-      return false;
-    }
     try {
-      const connected = await window.freighter.isConnected();
-      if (!connected) {
-        setError('Please connect your Freighter wallet');
-        return false;
-      }
+      const connected = await isConnected();
+      if (!connected) await requestAccess();
       return true;
     } catch {
-      setError('Failed to connect to wallet');
+      setError('Please install or unlock Freighter wallet');
       return false;
     }
   }, []);
@@ -205,7 +198,7 @@ export function useContract(contractId = CONTRACT_ID) {
   const getPublicKey = useCallback(async () => {
     if (!await checkWallet()) return null;
     try {
-      return await window.freighter.getPublicKey();
+      return await freighterGetPublicKey();
     } catch {
       setError('Failed to get public key');
       return null;
@@ -224,7 +217,7 @@ export function useContract(contractId = CONTRACT_ID) {
         return null;
       }
 
-      const publicKey = await window.freighter.getPublicKey();
+      const publicKey = await freighterGetPublicKey();
       if (!publicKey) {
         setLoading(false);
         setTxStatus(null);
@@ -255,13 +248,11 @@ export function useContract(contractId = CONTRACT_ID) {
       const prepared = typeof assembled.build === 'function' ? assembled.build() : assembled;
 
       setTxStatus('signing');
-      const signResult = await window.freighter.signTransaction(
-        prepared.toXDR(),
-        { networkPassphrase: PASSPHRASE }
-      );
-      const signedXdr = typeof signResult === 'object' && signResult !== null && signResult.signedTxXdr
-        ? signResult.signedTxXdr
-        : signResult;
+      const signResult = await freighterSignTransaction(prepared.toXDR(), { networkPassphrase: PASSPHRASE });
+      const signedXdr =
+        typeof signResult === 'object' && signResult !== null && signResult.signedTxXdr
+          ? signResult.signedTxXdr
+          : signResult;
 
       setTxStatus('submitting');
       const signedTx = TransactionBuilder.fromXDR(signedXdr, PASSPHRASE);
@@ -299,7 +290,7 @@ export function useContract(contractId = CONTRACT_ID) {
     try {
       let sourceKey;
       try {
-        sourceKey = await window.freighter.getPublicKey();
+        sourceKey = await freighterGetPublicKey();
       } catch {
         sourceKey = null;
       }
