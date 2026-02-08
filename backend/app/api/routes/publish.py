@@ -101,6 +101,7 @@ async def publish_claimable(request: ClaimPublishRequest) -> PublishResponse:
         contract_id=request.contract_id.strip(),
         network=request.network or "testnet",
         access_token_override=None,
+        unique_project_name=True,
     )
 
     if not result["success"]:

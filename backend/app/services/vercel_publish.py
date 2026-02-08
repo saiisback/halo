@@ -9,6 +9,7 @@ Deployments API (inlined files).
 from __future__ import annotations
 
 import re
+import uuid
 from typing import Any, TypedDict
 
 import httpx
@@ -50,6 +51,18 @@ def _sanitize_deployment_name(name: str) -> str:
     name = re.sub(r"[^a-z0-9-]+", "-", name)
     name = re.sub(r"-{2,}", "-", name).strip("-")
     return name[:48] or "halo-dapp"
+
+def _unique_name(base: str) -> str:
+    """
+    Create a Vercel-safe name with a short unique suffix.
+    Avoids claim-transfer failures when the target team already has the base name.
+    """
+    base = _sanitize_deployment_name(base)
+    suffix = uuid.uuid4().hex[:6]
+    # Leave room for suffix and dash
+    trimmed = base[: max(0, 48 - (1 + len(suffix)))]
+    trimmed = trimmed.rstrip("-") or "halo-dapp"
+    return f"{trimmed}-{suffix}"
 
 
 def _strip_leading_slash(path: str) -> str:
@@ -558,6 +571,7 @@ async def publish_to_vercel(
     contract_id: str,
     network: str = "testnet",
     access_token_override: str | None = None,
+    unique_project_name: bool = False,
 ) -> PublishResult:
     """
     Deploy the given generated files to Vercel and return the deployment URL.
@@ -573,7 +587,7 @@ async def publish_to_vercel(
             error="Missing Vercel access token (user not connected, and no VERCEL_API_TOKEN configured)",
         )
 
-    safe_name = _sanitize_deployment_name(name) if name else "halo-dapp"
+    safe_name = _unique_name(name) if unique_project_name else (_sanitize_deployment_name(name) if name else "halo-dapp")
     vite_files = build_vite_project_files(
         generated_files=generated_files,
         contract_id=contract_id,
